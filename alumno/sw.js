@@ -1,6 +1,6 @@
 // Guarda la app en el celular para que abra y muestre el QR sin señal.
-var CACHE = "patologiab-alumno-v2";
-var ARCHIVOS = ["./", "index.html", "qrcode.js", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
+var CACHE = "catedra-alumno-v3";
+var ARCHIVOS = ["./", "index.html", "qrcode.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "../config.js", "../catedra.js"];
 
 self.addEventListener("install", function (e) {
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(ARCHIVOS); }).then(function () { return self.skipWaiting(); }));

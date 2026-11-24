@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#16325c">
-<title>Patología B</title>
+<title>App de la cátedra</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Patología B">
+<meta name="apple-mobile-web-app-title" content="Cátedra">
 <style>
 :root{--azul:#16325c;--azul2:#1a56db;--fondo:#f4f5f7;--carta:#fff;--txt:#1b1b1b;--sec:#5b6270;--borde:#e3e5ea;--ok:#127a3c;--okf:#dcf3e4;--warn:#8a5a00;--warnf:#fdf0cf;--err:#a52222;--errf:#fbdede}
 *{box-sizing:border-box}
@@ -49,7 +49,7 @@ a{color:var(--azul2)}
 </style>
 </head>
 <body>
-<header><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div><div class="t">Cátedra B de Patología</div><div class="s" id="hsub">FCM · UNLP</div></div><button id="b-salir-top" class="oculto" style="background:none;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;white-space:nowrap">Salir</button></div></header>
+<header><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div><div class="t" id="htit">Cátedra</div><div class="s" id="hsub"></div></div><button id="b-salir-top" class="oculto" style="background:none;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;white-space:nowrap">Salir</button></div></header>
 <main>
 
   <!-- ===== Ingreso ===== -->
@@ -130,13 +130,11 @@ a{color:var(--azul2)}
   <button data-ir="nov"><span class="i">◉</span>Novedades</button>
 </nav>
 
+<script src="../config.js"></script>
+<script src="../catedra.js"></script>
 <script src="qrcode.js"></script>
 <script>
-/* ===== CONFIGURACIÓN ===== */
-var URL_API = "https://script.google.com/macros/s/AKfycbzTKNzGmQaeMGLIfW1Zw2uMNNJFByKEM8o7B-ongWkCACCEQlIrW4DL3XTss3oihwxTsQ/exec";
-var INSTAGRAM = "https://www.instagram.com/patologiab.unlp/";
-var MAIL_CATEDRA = "patologiab@med.unlp.edu.ar";
-/* ========================= */
+/* La dirección del Apps Script está en ../config.js; los datos de la cátedra salen de la hoja Config. */
 
 var D = null, LEG = "";
 function $(i) { return document.getElementById(i); }
@@ -280,14 +278,17 @@ function pintar() {
   $("notas-cont").innerHTML = tablaNotas(D.notas);
 
   /* novedades */
-  $("b-ig").href = (D.config && D.config.INSTAGRAM) || INSTAGRAM;
+  var ig = (D.config && D.config.INSTAGRAM) || CATEDRA.INSTAGRAM;
+  $("b-ig").href = ig || "#";
+  $("b-ig").classList.toggle("oculto", !ig);
   $("nov-cont").innerHTML = av.length ? av.map(tarjetaAviso).join("") : '<div class="card muted">No hay avisos por ahora.</div>';
 
   /* cátedra */
   var cfg = D.config || {}, links = "";
   if (cfg.AULASWEB) { links += '<div class="fila"><span>AulasWeb</span><a href="' + esc(cfg.AULASWEB) + '" target="_blank" rel="noopener">Abrir</a></div>'; }
-  links += '<div class="fila"><span>Instagram</span><a href="' + esc(cfg.INSTAGRAM || INSTAGRAM) + '" target="_blank" rel="noopener">@patologiab.unlp</a></div>';
-  links += '<div class="fila"><span>Secretaría</span><a href="mailto:' + MAIL_CATEDRA + '">' + MAIL_CATEDRA + "</a></div>";
+  var igUsr = cfg.INSTAGRAM_USUARIO || CATEDRA.INSTAGRAM_USUARIO || "Abrir", mail = cfg.CONTACTO || CATEDRA.CONTACTO;
+  if (ig) { links += '<div class="fila"><span>Instagram</span><a href="' + esc(ig) + '" target="_blank" rel="noopener">' + esc(igUsr) + '</a></div>'; }
+  if (mail) { links += '<div class="fila"><span>Secretaría</span><a href="mailto:' + esc(mail) + '">' + esc(mail) + "</a></div>"; }
   if (cfg.CRONOGRAMA) { links += '<div class="fila"><span>Cronograma</span><a href="' + esc(cfg.CRONOGRAMA) + '" target="_blank" rel="noopener">Ver</a></div>'; }
   if (cfg.CARTELERA) { links += '<div class="fila"><span>Cartelera</span><span>' + esc(cfg.CARTELERA) + "</span></div>"; }
   $("cat-cont").innerHTML = links;
@@ -324,6 +325,13 @@ function tablaNotas(n) {
 }
 
 /* ---------- arranque ---------- */
+cargarCatedra(function (c) {
+  document.title = c.CATEDRA_CORTO || c.CATEDRA_NOMBRE;
+  $("htit").textContent = c.CATEDRA_NOMBRE;
+  if (!D) { $("hsub").textContent = c.INSTITUCION || ""; }
+  if (c.COLOR) { document.documentElement.style.setProperty("--azul", c.COLOR); }
+  colorCatedra(c);
+});
 if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(function () {}); }
 (function () {
   LEG = load("alu_leg", "");
