@@ -2,211 +2,226 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Asistencia · Patología B</title>
 <style>
-  :root { --ok:#1b8a3a; --mal:#c62828; --warn:#b26a00; --fondo:#101418; --panel:#1a2027; --texto:#f2f4f6; }
-  * { box-sizing:border-box; }
-  body { margin:0; font-family:system-ui,sans-serif; background:var(--fondo); color:var(--texto); min-height:100dvh; }
-  header { padding:12px 16px; background:var(--panel); display:flex; justify-content:space-between; align-items:center; gap:8px; }
-  header h1 { font-size:1rem; margin:0; }
-  #estadoRed { font-size:.8rem; opacity:.85; }
-  main { padding:12px 16px 24px; max-width:560px; margin:0 auto; }
-  .panel { background:var(--panel); border-radius:12px; padding:14px; margin-bottom:12px; }
-  label { display:block; font-size:.85rem; margin-bottom:4px; opacity:.85; }
-  input { width:100%; padding:12px; font-size:1rem; border-radius:8px; border:1px solid #39424c; background:#0d1115; color:var(--texto); }
-  button { width:100%; padding:14px; font-size:1rem; border:0; border-radius:10px; background:#2b6cb0; color:#fff; margin-top:8px; }
-  button.sec { background:#39424c; }
-  button.fin { background:var(--mal); }
-  video { width:100%; border-radius:12px; background:#000; aspect-ratio:1/1; object-fit:cover; }
-  #resultado { min-height:92px; border-radius:12px; padding:14px; text-align:center; font-size:1.1rem; background:var(--panel); }
-  #resultado.ok { background:var(--ok); } #resultado.mal { background:var(--mal); } #resultado.warn { background:var(--warn); }
-  #resultado b { display:block; font-size:1.4rem; margin-bottom:4px; }
-  .fila { display:flex; justify-content:space-between; font-size:.9rem; margin-top:8px; }
-  .oculto { display:none; }
-  #resumen li { margin:2px 0; font-size:.9rem; }
+body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f5f6f8;color:#1b1b1b}
+.w{max-width:520px;margin:0 auto;padding:16px}
+h1{font-size:22px}
+.b{display:block;box-sizing:border-box;width:100%;text-align:center;background:#1a56db;color:#fff;border:0;border-radius:10px;padding:14px;margin:10px 0;font-size:16px;text-decoration:none;cursor:pointer}
+.res{border-radius:10px;padding:16px;margin:10px 0;background:#e5e7eb;font-size:18px;text-align:center}
+.ok{background:#c9f2d3}.err{background:#fbd0d0}.warn{background:#fdeeba}
+select,input[type=password]{font-size:16px;padding:10px;margin:8px 0;width:100%;box-sizing:border-box}
+li{padding:4px 0}
 </style>
 </head>
 <body>
-<header>
+<div class="w">
   <h1>Asistencia · Patología B</h1>
-  <span id="estadoRed"></span>
-</header>
-<main>
+  <div id="est" class="res">Cargando...</div>
 
-  <section id="vistaIngreso" class="panel">
-    <label for="token">Tu código personal de ayudante</label>
-    <input id="token" type="password" autocomplete="off" placeholder="Código que te dio la secretaría">
-    <button id="btnIngresar">Entrar</button>
-  </section>
+  <div id="login" style="display:none">
+    <label>Tu código de ayudante<input id="tok" type="password" autocomplete="off" placeholder="Código que te dio la secretaría"></label>
+    <button class="b" id="entrar">Entrar</button>
+  </div>
 
-  <section id="vistaEscaner" class="oculto">
-    <div class="panel">
-      <video id="video" playsinline muted></video>
-      <div class="fila"><span id="contador">Presentes: 0</span><span id="pendientes"></span></div>
-      <button id="btnCamara" class="sec">Activar cámara</button>
-    </div>
-    <div id="resultado">Apuntá la cámara al QR del alumno</div>
-    <div class="panel" style="margin-top:12px">
-      <button id="btnTerminar" class="fin">Terminar la clase</button>
-      <button id="btnSalir" class="sec">Salir</button>
-    </div>
-    <div id="vistaResumen" class="panel oculto"></div>
-  </section>
+  <div id="sel" style="display:none">
+    <label>Comisión <select id="com"></select></label>
+    <button class="b" id="ini">Empezar</button>
+    <button class="b" id="salir" style="background:#64748b">Cambiar de usuario</button>
+  </div>
 
-</main>
+  <div id="esc" style="display:none">
+    <video id="v" playsinline muted style="width:100%;border-radius:12px;background:#000"></video>
+    <canvas id="cv" style="display:none"></canvas>
+    <div id="res" class="res">Apuntá la cámara al QR del alumno</div>
+    <label class="b">Sacar foto del QR<input id="foto" type="file" accept="image/*" capture="environment" style="display:none"></label>
+    <p id="cnt" style="font-size:20px;text-align:center;font-weight:bold"></p>
+    <p id="sync" style="text-align:center"></p>
+    <button class="b" id="fin" style="background:#16a34a">Terminar la clase</button>
+    <ul id="lst"></ul>
+  </div>
+
+  <div id="resumen" style="display:none">
+    <div id="rtit" class="res ok"></div>
+    <p id="rsync" style="text-align:center"></p>
+    <h3>Presentes</h3><ul id="rpres"></ul>
+    <h3>Ausentes</h3><ul id="raus"></ul>
+    <button class="b" id="seguir">Seguir escaneando</button>
+    <button class="b" id="otra" style="background:#64748b">Elegir otra comisión</button>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
-/* ============ CONFIGURACIÓN ============ */
-// URL de la implementación del Apps Script (termina en /exec). Pegala acá.
-const URL_APPS_SCRIPT = "PEGAR_ACA_LA_URL_DE_APPS_SCRIPT";
-/* ======================================= */
+/* ===== CONFIGURACIÓN: pegá acá la URL de la implementación de Apps Script (termina en /exec) ===== */
+var URL_API = "https://script.google.com/macros/s/AKfycbzTKNzGmQaeMGLIfW1Zw2uMNNJFByKEM8o7B-ongWkCACCEQlIrW4DL3XTss3oihwxTsQ/exec";
+/* ================================================================================================= */
 
-const $ = id => document.getElementById(id);
-const LS = { token:"pb_token", cola:"pb_cola", presentes:"pb_presentes" };
-let stream = null, escaneando = false, ultimoQR = "", ultimoT = 0;
-let presentes = JSON.parse(localStorage.getItem(LS.presentes) || "0");
+window.onerror = function (m) { try { msg("Error: " + m, "err"); } catch (e) {} };
+var TOKEN = "", ROS = {}, COM = null, HOY = "", visto = {}, cola = [], CK = "", VK = "", RK = "";
+var total = 0, lastTxt = "", lastT = 0, syncing = false, timer = null, camTried = false;
 
-function token(){ return localStorage.getItem(LS.token) || ""; }
-function cola(){ return JSON.parse(localStorage.getItem(LS.cola) || "[]"); }
-function guardarCola(c){ localStorage.setItem(LS.cola, JSON.stringify(c)); mostrarPendientes(); }
-function mostrarPendientes(){ const n = cola().length; $("pendientes").textContent = n ? n + " sin sincronizar" : "Todo sincronizado"; }
-function mostrarRed(){ $("estadoRed").textContent = navigator.onLine ? "En línea" : "Sin conexión"; }
-
-async function llamar(payload){
-  const r = await fetch(URL_APPS_SCRIPT, {
-    method:"POST",
-    headers:{ "Content-Type":"text/plain;charset=utf-8" },
-    body: JSON.stringify(Object.assign({ token: token() }, payload))
-  });
-  return r.json();
+function $(i) { return document.getElementById(i); }
+function pad(n) { return n < 10 ? "0" + n : "" + n; }
+function ahora() { var d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()); }
+function load(k, def) { try { var s = localStorage.getItem(k); return s ? JSON.parse(s) : def; } catch (e) { return def; } }
+function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function msg(t, c) { $("res").textContent = t; $("res").className = "res " + (c || ""); }
+function ver(id) { ["login", "sel", "esc", "resumen"].forEach(function (x) { $(x).style.display = x === id ? "block" : "none"; }); }
+function cnt() { $("cnt").textContent = Object.keys(visto).length + " de " + total + " presentes"; }
+function estado() {
+  var t = cola.length ? ("Pendientes de enviar: " + cola.length + " (se envían solos cuando haya señal)") : "Todo enviado a la planilla";
+  $("sync").textContent = t; $("rsync").textContent = t;
+}
+function lista(n) { var li = document.createElement("li"); li.textContent = n; $("lst").insertBefore(li, $("lst").firstChild); }
+function fill(id, arr) {
+  var u = $(id); u.innerHTML = "";
+  if (!arr.length) { var li = document.createElement("li"); li.textContent = "Ninguno"; u.appendChild(li); return; }
+  arr.forEach(function (n) { var li = document.createElement("li"); li.textContent = n; u.appendChild(li); });
 }
 
-function mostrar(tipo, titulo, detalle){
-  const r = $("resultado");
-  r.className = tipo;
-  r.innerHTML = "<b></b><span></span>";
-  r.querySelector("b").textContent = titulo;
-  r.querySelector("span").textContent = detalle || "";
-  if (navigator.vibrate) navigator.vibrate(tipo === "ok" ? 80 : [120,60,120]);
-}
-
-async function registrar(qr){
-  const registro = { accion:"registrar", qr, ts: new Date().toISOString() };
-  try {
-    if (!navigator.onLine) throw new Error("offline");
-    const rta = await llamar(registro);
-    if (rta.estado === "presente") { presentes++; localStorage.setItem(LS.presentes, presentes); $("contador").textContent = "Presentes: " + presentes; mostrar("ok", rta.nombre || "Presente", rta.legajo ? "Legajo " + rta.legajo : ""); }
-    else if (rta.estado === "duplicado") mostrar("warn", "Ya estaba registrado", rta.nombre || "");
-    else mostrar("mal", "QR no válido", rta.msg || "");
-  } catch (e) {
-    // Sin señal: queda en el celular y se manda después. La verificación de la firma la hace el servidor al sincronizar.
-    const c = cola(); c.push(registro); guardarCola(c);
-    mostrar("warn", "Guardado sin conexión", "Se valida y envía cuando haya señal");
-  }
-}
-
-async function sincronizar(){
-  const c = cola();
-  if (!c.length || !navigator.onLine || !token()) return;
-  const resto = [];
-  for (const reg of c) {
-    try { await llamar(reg); } catch (e) { resto.push(reg); }
-  }
-  guardarCola(resto);
-}
-
-/* ---- cámara en vivo ---- */
-async function activarCamara(){
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:"environment" } }, audio:false });
-    $("video").srcObject = stream;
-    await $("video").play();
-    $("btnCamara").classList.add("oculto");
-    escaneando = true;
-    requestAnimationFrame(ciclo);
-  } catch (e) {
-    mostrar("mal", "No se pudo abrir la cámara", "Revisá el permiso de cámara del navegador");
-  }
-}
-
-const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d", { willReadFrequently:true });
-let detector = ("BarcodeDetector" in window) ? new BarcodeDetector({ formats:["qr_code"] }) : null;
-
-async function ciclo(){
-  if (!escaneando) return;
-  const v = $("video");
-  if (v.readyState >= 2) {
-    let texto = "";
-    try {
-      if (detector) {
-        const r = await detector.detect(v);
-        if (r.length) texto = r[0].rawValue;
-      } else {
-        canvas.width = v.videoWidth; canvas.height = v.videoHeight;
-        ctx.drawImage(v, 0, 0);
-        const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const q = jsQR(img.data, img.width, img.height);
-        if (q) texto = q.data;
-      }
-    } catch (e) {}
-    const ahora = Date.now();
-    if (texto && (texto !== ultimoQR || ahora - ultimoT > 4000)) {
-      ultimoQR = texto; ultimoT = ahora;
-      await registrar(texto);
-    }
-  }
-  setTimeout(() => requestAnimationFrame(ciclo), 150);
-}
-
-function apagarCamara(){
-  escaneando = false;
-  if (stream) stream.getTracks().forEach(t => t.stop());
-  stream = null; $("btnCamara").classList.remove("oculto");
-}
-
-/* ---- cierre de clase ---- */
-async function terminarClase(){
-  if (!confirm("¿Terminar la clase? Se manda el resumen a la secretaría.")) return;
-  await sincronizar();
-  if (cola().length) { mostrar("warn", "Quedan registros sin enviar", "Conectate a internet y probá de nuevo"); return; }
-  try {
-    const rta = await llamar({ accion:"terminar", ts:new Date().toISOString() });
-    const caja = $("vistaResumen"); caja.classList.remove("oculto"); caja.innerHTML = "";
-    const h = document.createElement("div");
-    h.textContent = "Presentes: " + (rta.presentes ? rta.presentes.length : 0) + " · Ausentes: " + (rta.ausentes ? rta.ausentes.length : 0);
-    h.style.fontWeight = "600"; caja.appendChild(h);
-    const ul = document.createElement("ul");
-    (rta.ausentes || []).forEach(n => { const li = document.createElement("li"); li.textContent = "Ausente: " + n; ul.appendChild(li); });
-    caja.appendChild(ul);
-    presentes = 0; localStorage.setItem(LS.presentes, "0"); $("contador").textContent = "Presentes: 0";
-    apagarCamara();
-  } catch (e) {
-    mostrar("mal", "No se pudo cerrar la clase", "Probá de nuevo con señal");
-  }
+/* ---- comunicación con Apps Script ---- */
+function api(accion, datos) {
+  var body = JSON.stringify(Object.assign({ token: TOKEN, accion: accion }, datos || {}));
+  return fetch(URL_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: body })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { if (j && j.error) { throw new Error(j.error); } return j; });
 }
 
 /* ---- ingreso ---- */
-function entrar(){
-  const t = $("token").value.trim() || token();
-  if (!t) return;
-  localStorage.setItem(LS.token, t);
-  $("vistaIngreso").classList.add("oculto");
-  $("vistaEscaner").classList.remove("oculto");
-  $("contador").textContent = "Presentes: " + presentes;
-  mostrarPendientes(); sincronizar();
+function arrancar() {
+  TOKEN = load("pb_token", "");
+  if (!TOKEN) { $("est").textContent = "Ingresá con tu código de ayudante"; ver("login"); return; }
+  $("est").textContent = "Cargando...";
+  api("estado").then(function (e) {
+    save("pb_estado", e); mostrarEstado(e);
+  }).catch(function (er) {
+    if (String(er.message).indexOf("Código") >= 0) { localStorage.removeItem("pb_token"); $("est").textContent = er.message; ver("login"); return; }
+    var e = load("pb_estado", null);
+    if (e) { mostrarEstado(e); } else { $("est").textContent = "Sin conexión. Abrí la página con señal al menos una vez antes de la clase."; }
+  });
+}
+function mostrarEstado(e) {
+  HOY = e.hoy;
+  var ops = e.mias.length ? e.mias : e.todas;
+  $("est").textContent = e.mias.length ? ("Hoy (" + e.hoy + ") tenés turno en: " + e.mias.join(", ")) : "Hoy no tenés turno asignado. Modo prueba: elegí cualquier comisión.";
+  $("com").innerHTML = "";
+  ops.forEach(function (c) { var o = document.createElement("option"); o.value = c; o.textContent = "Comisión " + c; $("com").appendChild(o); });
+  ver("sel");
+}
+$("entrar").onclick = function () {
+  var t = $("tok").value.trim(); if (!t) { return; }
+  save("pb_token", t); arrancar();
+};
+$("salir").onclick = function () { localStorage.removeItem("pb_token"); $("tok").value = ""; $("est").textContent = "Ingresá con tu código de ayudante"; ver("login"); };
+
+/* ---- clase ---- */
+$("ini").onclick = function () {
+  COM = $("com").value; RK = "ros_" + HOY + "_" + COM; CK = "cola_" + HOY + "_" + COM; VK = "vis_" + HOY + "_" + COM;
+  cola = load(CK, []); visto = load(VK, {});
+  api("roster", { com: COM }).then(function (r) { save(RK, r); iniciar(r); }).catch(function () {
+    var r = load(RK, null);
+    if (r) { iniciar(r); } else { $("est").textContent = "No hay lista guardada. Conectate una vez para descargarla."; }
+  });
+};
+function iniciar(r) {
+  ROS = {}; r.forEach(function (a) { ROS[a.l] = a; }); total = r.length;
+  $("lst").innerHTML = ""; Object.keys(visto).forEach(function (l) { if (ROS[l]) { lista(ROS[l].n); } });
+  $("est").textContent = "Comisión " + COM + " - " + HOY;
+  msg("Apuntá la cámara al QR del alumno", "");
+  ver("esc"); cnt(); estado();
+  if (!camTried) { camTried = true; startCam(); }
+  if (!timer) { timer = setInterval(sync, 8000); window.addEventListener("online", sync); }
+  sync();
 }
 
-$("btnIngresar").onclick = entrar;
-$("btnCamara").onclick = activarCamara;
-$("btnTerminar").onclick = terminarClase;
-$("btnSalir").onclick = () => { apagarCamara(); localStorage.removeItem(LS.token); location.reload(); };
-window.addEventListener("online", () => { mostrarRed(); sincronizar(); });
-window.addEventListener("offline", mostrarRed);
-mostrarRed();
-if (token()) entrar();
+/* La firma del QR se verifica acá contra la lista de la comisión (sirve sin señal) */
+function procesar(txt) {
+  var t = Date.now(); if (txt === lastTxt && t - lastT < 2500) { return; } lastTxt = txt; lastT = t;
+  var p = (txt || "").split("|");
+  if (p.length !== 3 || p[0] !== "PAT1") { msg("QR no válido", "err"); return; }
+  var a = ROS[p[1]];
+  if (!a || a.c !== txt) { msg("Este QR no corresponde a esta comisión", "err"); return; }
+  if (visto[p[1]]) { msg(a.n + " ya estaba registrado", "warn"); return; }
+  visto[p[1]] = 1; cola.push({ l: p[1], ts: ahora() }); save(CK, cola); save(VK, visto);
+  var todos = Object.keys(visto).length >= total;
+  msg(a.n + " - PRESENTE" + (todos ? ". Ya están todos, podés terminar la clase." : ""), "ok");
+  if (navigator.vibrate) { navigator.vibrate(120); }
+  lista(a.n); cnt(); estado(); sync();
+}
+function sync() {
+  if (syncing || !cola.length) { estado(); return; }
+  syncing = true; var lote = cola.slice();
+  api("registrar", { com: COM, items: lote }).then(function () {
+    syncing = false;
+    var ids = {}; lote.forEach(function (x) { ids[x.l] = 1; });
+    cola = cola.filter(function (x) { return !ids[x.l]; }); save(CK, cola); estado();
+  }).catch(function () { syncing = false; estado(); });
+}
+function resumen() {
+  var pres = [], aus = [];
+  Object.keys(ROS).forEach(function (l) { if (visto[l]) { pres.push(ROS[l].n); } else { aus.push(ROS[l].n); } });
+  $("rtit").textContent = "Comisión " + COM + ": " + pres.length + " presentes y " + aus.length + " ausentes";
+  fill("rpres", pres); fill("raus", aus); estado(); sync(); ver("resumen");
+}
+$("fin").onclick = resumen;
+$("seguir").onclick = function () { ver("esc"); };
+$("otra").onclick = function () {
+  if (cola.length) { $("rsync").textContent = "Todavía hay pendientes. Esperá a tener señal antes de cambiar de comisión."; return; }
+  ver("sel");
+};
+
+/* ---- cámara en vivo ---- */
+function noCam() { $("v").style.display = "none"; msg("No se pudo abrir la cámara. Usá el botón para sacar una foto del QR.", "warn"); }
+function startCam() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { noCam(); return; }
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
+    .then(function (s) { var v = $("v"); v.srcObject = s; v.play(); requestAnimationFrame(tick); })
+    .catch(function () { noCam(); });
+}
+function decodificar(c, cb) {
+  function conJsqr() {
+    if (typeof jsQR === "undefined") { cb(null, "no-lib"); return; }
+    var x = c.getContext("2d"); var im = x.getImageData(0, 0, c.width, c.height); var q = jsQR(im.data, im.width, im.height);
+    cb(q && q.data ? q.data : null);
+  }
+  if (window.BarcodeDetector) {
+    try { new BarcodeDetector({ formats: ["qr_code"] }).detect(c).then(function (r) { if (r.length) { cb(r[0].rawValue); } else { conJsqr(); } }).catch(function () { conJsqr(); }); }
+    catch (e) { conJsqr(); }
+  } else { conJsqr(); }
+}
+function tick() {
+  var v = $("v");
+  if (v.readyState === v.HAVE_ENOUGH_DATA && $("esc").style.display === "block") {
+    var c = $("cv"); c.width = v.videoWidth; c.height = v.videoHeight;
+    c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+    decodificar(c, function (t) { if (t) { procesar(t); } });
+  }
+  requestAnimationFrame(tick);
+}
+
+/* ---- foto (respaldo si la cámara en vivo no anda) ---- */
+$("foto").addEventListener("change", function (ev) {
+  var f = ev.target.files[0];
+  if (!f) { msg("No llegó la foto", "err"); return; }
+  msg("Foto recibida, leyendo...", "warn");
+  var img = new Image();
+  img.onerror = function () { msg("No se pudo abrir la foto", "err"); };
+  img.onload = function () {
+    var c = $("cv"); var s = Math.min(1, 1600 / Math.max(img.width, img.height));
+    c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    decodificar(c, function (t, err) {
+      if (t) { lastTxt = ""; procesar(t); }
+      else if (err) { msg("El lector de QR no cargó en este celular.", "err"); }
+      else { msg("No se leyó el QR. Acercate y que se vea completo.", "err"); }
+    });
+  };
+  img.src = URL.createObjectURL(f); ev.target.value = "";
+});
+
+arrancar();
 </script>
 </body>
 </html>
