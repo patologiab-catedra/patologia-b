@@ -49,7 +49,7 @@ a{color:var(--azul2)}
 </style>
 </head>
 <body>
-<header><div class="t">Cátedra B de Patología</div><div class="s" id="hsub">FCM · UNLP</div></header>
+<header><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div><div class="t">Cátedra B de Patología</div><div class="s" id="hsub">FCM · UNLP</div></div><button id="b-salir-top" class="oculto" style="background:none;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;white-space:nowrap">Salir</button></div></header>
 <main>
 
   <!-- ===== Ingreso ===== -->
@@ -159,6 +159,7 @@ function ir(v) {
   VISTAS.forEach(function (x) { $("v-" + x).classList.toggle("oculto", x !== v); });
   var adentro = ["legajo", "codigo"].indexOf(v) < 0;
   $("nav").classList.toggle("oculto", !adentro);
+  $("b-salir-top").classList.toggle("oculto", !adentro);
   [].forEach.call(document.querySelectorAll("nav button"), function (b) { b.classList.toggle("on", b.getAttribute("data-ir") === v); });
   window.scrollTo(0, 0);
 }
@@ -199,11 +200,14 @@ function validar() {
     msg("m-cod", e.srv ? e.message : "No hay conexión. Probá de nuevo cuando tengas señal.");
   }).then(function () { $("b-validar").disabled = false; });
 }
-$("b-salir").onclick = function () {
+function salir() {
+  if (!confirm("¿Cerrar sesión en este celular? Para volver a entrar vas a necesitar un código nuevo por mail.")) { return; }
   api("alu_salir").catch(function () {});
   ["alu_sesion", "alu_datos"].forEach(function (k) { localStorage.removeItem(k); });
   D = null; $("in-leg").value = ""; ir("legajo");
-};
+}
+$("b-salir").onclick = salir;
+$("b-salir-top").onclick = salir;
 
 /* ---------- datos ---------- */
 function actualizar(irInicio) {
