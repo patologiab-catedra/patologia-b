@@ -17,6 +17,7 @@ li{padding:4px 0}
 </head>
 <body>
 <div class="w">
+  <button id="volver" style="display:none;background:none;border:0;color:#1a56db;font-size:16px;padding:6px 0;cursor:pointer">← Volver</button>
   <h1 id="tit">Asistencia</h1>
   <div id="est" class="res">Cargando...</div>
 
@@ -69,7 +70,12 @@ function ahora() { var d = new Date(); return d.getFullYear() + "-" + pad(d.getM
 function load(k, def) { try { var s = localStorage.getItem(k); return s ? JSON.parse(s) : def; } catch (e) { return def; } }
 function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
 function msg(t, c) { $("res").textContent = t; $("res").className = "res " + (c || ""); }
-function ver(id) { ["login", "sel", "esc", "resumen"].forEach(function (x) { $(x).style.display = x === id ? "block" : "none"; }); }
+var VISTA = "";
+function ver(id) {
+  VISTA = id;
+  ["login", "sel", "esc", "resumen"].forEach(function (x) { $(x).style.display = x === id ? "block" : "none"; });
+  $("volver").style.display = (id === "esc" || id === "resumen") ? "inline-block" : "none";
+}
 function cnt() { $("cnt").textContent = Object.keys(visto).length + " de " + total + " presentes"; }
 function estado() {
   var t = cola.length ? ("Pendientes de enviar: " + cola.length + " (se envían solos cuando haya señal)") : "Todo enviado a la planilla";
@@ -174,6 +180,12 @@ function resumen() {
   fill("rpres", pres); fill("raus", aus); estado(); sync(); ver("resumen");
 }
 $("fin").onclick = resumen;
+/* ← Volver: del escaneo a elegir comisión; del resumen al escaneo */
+$("volver").onclick = function () {
+  if (VISTA === "resumen") { ver("esc"); return; }
+  if (cola.length) { msg("Todavía hay presentes sin enviar. Esperá a tener señal antes de salir de la clase.", "warn"); return; }
+  $("est").textContent = "Elegí la comisión"; ver("sel");
+};
 $("seguir").onclick = function () { ver("esc"); };
 $("otra").onclick = function () {
   if (cola.length) { $("rsync").textContent = "Todavía hay pendientes. Esperá a tener señal antes de cambiar de comisión."; return; }
