@@ -50,7 +50,7 @@ li{padding:4px 0}
     <h3>Presentes</h3><ul id="rpres"></ul>
     <h3>Ausentes</h3><ul id="raus"></ul>
     <button class="b" id="seguir">Seguir escaneando</button>
-    <button class="b" id="otra" style="background:#64748b">Elegir otra comisión</button>
+    <button class="b" id="otra" style="background:#16a34a">Cerrar la clase</button>
   </div>
 </div>
 
@@ -188,7 +188,9 @@ $("volver").onclick = function () {
 };
 $("seguir").onclick = function () { ver("esc"); };
 $("otra").onclick = function () {
-  if (cola.length) { $("rsync").textContent = "Todavía hay pendientes. Esperá a tener señal antes de cambiar de comisión."; return; }
+  if (cola.length) { $("rsync").textContent = "Todavía hay presentes sin enviar. Esperá a tener señal antes de cerrar la clase."; return; }
+  var n = Object.keys(visto).length;
+  $("est").textContent = "Clase cerrada: comisión " + COM + (TIPO ? " · " + TIPO : "") + ", " + n + " presentes guardados en la planilla.";
   ver("sel");
 };
 
