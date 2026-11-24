@@ -27,6 +27,7 @@ li{padding:4px 0}
 
   <div id="sel" style="display:none">
     <label>Comisión <select id="com"></select></label>
+    <label id="tipoBox" style="display:none">Tipo de clase <select id="tipo"></select></label>
     <button class="b" id="ini">Empezar</button>
     <button class="b" id="salir" style="background:#64748b">Cambiar de usuario</button>
   </div>
@@ -59,7 +60,7 @@ li{padding:4px 0}
 /* La dirección del Apps Script está en config.js; el nombre de la cátedra sale de la hoja Config. */
 
 window.onerror = function (m) { try { msg("Error: " + m, "err"); } catch (e) {} };
-var TOKEN = "", ROS = {}, COM = null, HOY = "", visto = {}, cola = [], CK = "", VK = "", RK = "";
+var TOKEN = "", ROS = {}, COM = null, TIPO = "", HOY = "", visto = {}, cola = [], CK = "", VK = "", RK = "";
 var total = 0, lastTxt = "", lastT = 0, syncing = false, timer = null, camTried = false;
 
 function $(i) { return document.getElementById(i); }
@@ -108,6 +109,11 @@ function mostrarEstado(e) {
   $("est").textContent = e.mias.length ? ("Hoy (" + e.hoy + ") tenés turno en: " + e.mias.join(", ")) : "Hoy no tenés turno asignado. Modo prueba: elegí cualquier comisión.";
   $("com").innerHTML = "";
   ops.forEach(function (c) { var o = document.createElement("option"); o.value = c; o.textContent = "Comisión " + c; $("com").appendChild(o); });
+  /* Tipos de clase (hoja "Tipos de clase"): solo se pregunta si hay más de uno */
+  var tipos = e.tipos || [];
+  $("tipo").innerHTML = "";
+  tipos.forEach(function (t) { var o = document.createElement("option"); o.value = t; o.textContent = t; $("tipo").appendChild(o); });
+  $("tipoBox").style.display = tipos.length > 1 ? "block" : "none";
   ver("sel");
 }
 $("entrar").onclick = function () {
@@ -118,7 +124,9 @@ $("salir").onclick = function () { localStorage.removeItem("pb_token"); $("tok")
 
 /* ---- clase ---- */
 $("ini").onclick = function () {
-  COM = $("com").value; RK = "ros_" + HOY + "_" + COM; CK = "cola_" + HOY + "_" + COM; VK = "vis_" + HOY + "_" + COM;
+  COM = $("com").value; TIPO = $("tipo").value || "";
+  var suf = HOY + "_" + COM + (TIPO ? "_" + TIPO : "");
+  RK = "ros_" + HOY + "_" + COM; CK = "cola_" + suf; VK = "vis_" + suf;
   cola = load(CK, []); visto = load(VK, {});
   api("roster", { com: COM }).then(function (r) { save(RK, r); iniciar(r); }).catch(function () {
     var r = load(RK, null);
@@ -128,7 +136,7 @@ $("ini").onclick = function () {
 function iniciar(r) {
   ROS = {}; r.forEach(function (a) { ROS[a.l] = a; }); total = r.length;
   $("lst").innerHTML = ""; Object.keys(visto).forEach(function (l) { if (ROS[l]) { lista(ROS[l].n); } });
-  $("est").textContent = "Comisión " + COM + " - " + HOY;
+  $("est").textContent = "Comisión " + COM + (TIPO ? " · " + TIPO : "") + " - " + HOY;
   msg("Apuntá la cámara al QR del alumno", "");
   ver("esc"); cnt(); estado();
   if (!camTried) { camTried = true; startCam(); }
@@ -153,7 +161,7 @@ function procesar(txt) {
 function sync() {
   if (syncing || !cola.length) { estado(); return; }
   syncing = true; var lote = cola.slice();
-  api("registrar", { com: COM, items: lote }).then(function () {
+  api("registrar", { com: COM, tipo: TIPO, items: lote }).then(function () {
     syncing = false;
     var ids = {}; lote.forEach(function (x) { ids[x.l] = 1; });
     cola = cola.filter(function (x) { return !ids[x.l]; }); save(CK, cola); estado();
@@ -162,7 +170,7 @@ function sync() {
 function resumen() {
   var pres = [], aus = [];
   Object.keys(ROS).forEach(function (l) { if (visto[l]) { pres.push(ROS[l].n); } else { aus.push(ROS[l].n); } });
-  $("rtit").textContent = "Comisión " + COM + ": " + pres.length + " presentes y " + aus.length + " ausentes";
+  $("rtit").textContent = "Comisión " + COM + (TIPO ? " · " + TIPO : "") + ": " + pres.length + " presentes y " + aus.length + " ausentes";
   fill("rpres", pres); fill("raus", aus); estado(); sync(); ver("resumen");
 }
 $("fin").onclick = resumen;
