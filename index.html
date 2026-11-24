@@ -2,235 +2,394 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Asistencia</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16325c">
+<title>App de la cátedra</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cátedra">
 <style>
-body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f5f6f8;color:#1b1b1b}
-.w{max-width:520px;margin:0 auto;padding:16px}
-h1{font-size:22px}
-.b{display:block;box-sizing:border-box;width:100%;text-align:center;background:#1a56db;color:#fff;border:0;border-radius:10px;padding:14px;margin:10px 0;font-size:16px;text-decoration:none;cursor:pointer}
-.res{border-radius:10px;padding:16px;margin:10px 0;background:#e5e7eb;font-size:18px;text-align:center}
-.ok{background:#c9f2d3}.err{background:#fbd0d0}.warn{background:#fdeeba}
-select,input[type=password]{font-size:16px;padding:10px;margin:8px 0;width:100%;box-sizing:border-box}
-li{padding:4px 0}
+:root{--azul:#16325c;--azul2:#1a56db;--fondo:#f4f5f7;--carta:#fff;--txt:#1b1b1b;--sec:#5b6270;--borde:#e3e5ea;--ok:#127a3c;--okf:#dcf3e4;--warn:#8a5a00;--warnf:#fdf0cf;--err:#a52222;--errf:#fbdede}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--fondo);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:16px;line-height:1.45}
+header{background:var(--azul);color:#fff;padding:14px 18px calc(14px);padding-top:calc(14px + env(safe-area-inset-top))}
+header .t{font-size:17px;font-weight:600}
+header .s{font-size:13px;opacity:.8}
+main{max-width:560px;margin:0 auto;padding:16px 16px 96px}
+h2{font-size:20px;margin:6px 0 12px}
+h3{font-size:16px;margin:18px 0 8px}
+.card{background:var(--carta);border:1px solid var(--borde);border-radius:14px;padding:16px;margin:0 0 12px}
+.big{font-size:40px;font-weight:700;line-height:1}
+.muted{color:var(--sec);font-size:14px}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:600;background:var(--azul2);color:#fff;text-align:center;text-decoration:none;cursor:pointer;margin:10px 0}
+.btn.sec{background:#e8ebf1;color:var(--azul)}
+.btn:disabled{opacity:.5}
+input{width:100%;font-size:20px;padding:12px 14px;border:1px solid #c9cdd6;border-radius:12px;margin:6px 0;background:#fff}
+input.cod{letter-spacing:8px;text-align:center;font-size:26px}
+.aviso{border-left:4px solid var(--azul2);border-radius:0}
+.chip{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:#e8ebf1;color:var(--azul);margin-right:6px}
+.msg{border-radius:12px;padding:12px;margin:10px 0;font-size:15px}
+.msg.err{background:var(--errf);color:var(--err)}.msg.ok{background:var(--okf);color:var(--ok)}.msg.warn{background:var(--warnf);color:var(--warn)}
+.est-ok{background:var(--okf);color:var(--ok)}.est-warn{background:var(--warnf);color:var(--warn)}.est-err{background:var(--errf);color:var(--err)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--borde)}
+th:first-child,td:first-child{text-align:left}
+.fila{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--borde)}
+.fila:last-child{border-bottom:0}
+#qrbox{background:#fff;border-radius:16px;padding:18px;display:flex;justify-content:center}
+#qrbox img,#qrbox canvas{width:100%;max-width:320px;height:auto;image-rendering:pixelated}
+nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--borde);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;padding:10px 2px 12px;font-size:12px;color:var(--sec);cursor:pointer}
+nav button .i{display:block;font-size:20px;line-height:1.2}
+nav button.on{color:var(--azul2);font-weight:600}
+.oculto{display:none!important}
+a{color:var(--azul2)}
 </style>
 </head>
 <body>
-<div class="w">
-  <h1 id="tit">Asistencia</h1>
-  <div id="est" class="res">Cargando...</div>
+<header><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div><div class="t" id="htit">Cátedra</div><div class="s" id="hsub"></div></div><button id="b-salir-top" class="oculto" style="background:none;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;white-space:nowrap">Salir</button></div></header>
+<main>
 
-  <div id="login" style="display:none">
-    <label>Tu código de ayudante<input id="tok" type="password" autocomplete="off" placeholder="Código que te dio la secretaría"></label>
-    <button class="b" id="entrar">Entrar</button>
-  </div>
+  <!-- ===== Ingreso ===== -->
+  <section id="v-legajo" class="oculto">
+    <h2>Entrá con tu legajo</h2>
+    <p class="muted">Te mandamos un código de 6 números al mail que tenés registrado en el SIU Guaraní. Si lo cambiaste, avisá a la secretaría.</p>
+    <label>Legajo<input id="in-leg" inputmode="numeric" autocomplete="off" placeholder="Ej: 123456"></label>
+    <div id="m-leg"></div>
+    <button class="btn" id="b-pedir">Mandarme el código</button>
+  </section>
 
-  <div id="sel" style="display:none">
-    <label>Comisión <select id="com"></select></label>
-    <label id="tipoBox" style="display:none">Tipo de clase <select id="tipo"></select></label>
-    <button class="b" id="ini">Empezar</button>
-    <button class="b" id="salir" style="background:#64748b">Cambiar de usuario</button>
-  </div>
+  <section id="v-codigo" class="oculto">
+    <h2>Revisá tu mail</h2>
+    <p class="muted" id="t-mail"></p>
+    <input id="in-cod" class="cod" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
+    <div id="m-cod"></div>
+    <button class="btn" id="b-validar">Entrar</button>
+    <button class="btn sec" id="b-reenviar">Reenviar código</button>
+    <button class="btn sec" id="b-otro">Cambiar el legajo</button>
+    <p class="muted">Si no te llega en un par de minutos, revisá la carpeta de spam o promociones.</p>
+  </section>
 
-  <div id="esc" style="display:none">
-    <video id="v" playsinline muted style="width:100%;border-radius:12px;background:#000"></video>
-    <canvas id="cv" style="display:none"></canvas>
-    <div id="res" class="res">Apuntá la cámara al QR del alumno</div>
-    <label class="b">Sacar foto del QR<input id="foto" type="file" accept="image/*" capture="environment" style="display:none"></label>
-    <p id="cnt" style="font-size:20px;text-align:center;font-weight:bold"></p>
-    <p id="sync" style="text-align:center"></p>
-    <button class="b" id="fin" style="background:#16a34a">Terminar la clase</button>
-    <ul id="lst"></ul>
-  </div>
+  <!-- ===== Inicio ===== -->
+  <section id="v-inicio" class="oculto">
+    <h2 id="saludo"></h2>
+    <div class="card" id="c-faltas"></div>
+    <button class="btn" data-ir="qr">Mostrar mi QR</button>
+    <div id="c-ultimo"></div>
+    <button class="btn sec" data-ir="catedra">Información de la cátedra</button>
+    <p class="muted" id="t-act"></p>
+  </section>
 
-  <div id="resumen" style="display:none">
-    <div id="rtit" class="res ok"></div>
-    <p id="rsync" style="text-align:center"></p>
-    <h3>Presentes</h3><ul id="rpres"></ul>
-    <h3>Ausentes</h3><ul id="raus"></ul>
-    <button class="b" id="seguir">Seguir escaneando</button>
-    <button class="b" id="otra" style="background:#64748b">Elegir otra comisión</button>
-  </div>
-</div>
+  <!-- ===== Mi QR ===== -->
+  <section id="v-qr" class="oculto">
+    <h2>Mi QR</h2>
+    <div id="qrbox"></div>
+    <div class="card" style="margin-top:12px;text-align:center">
+      <div style="font-size:18px;font-weight:600" id="qr-nom"></div>
+      <div class="muted" id="qr-dat"></div>
+    </div>
+    <p class="muted">Mostráselo al ayudante al entrar a la clase. Funciona sin señal. Subí el brillo si cuesta leerlo.</p>
+  </section>
 
-<script src="config.js"></script>
-<script src="catedra.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+  <!-- ===== Asistencia ===== -->
+  <section id="v-asis" class="oculto">
+    <h2>Asistencia</h2>
+    <div id="asis-cont"></div>
+    <p class="muted">Las faltas con certificado cuentan como presente solo cuando la secretaría las autoriza.</p>
+  </section>
+
+  <!-- ===== Notas ===== -->
+  <section id="v-notas" class="oculto">
+    <h2>Notas de parciales</h2>
+    <div id="notas-cont"></div>
+  </section>
+
+  <!-- ===== Novedades ===== -->
+  <section id="v-nov" class="oculto">
+    <h2>Novedades</h2>
+    <a class="btn sec" id="b-ig" target="_blank" rel="noopener">Seguí a la cátedra en Instagram</a>
+    <div id="nov-cont"></div>
+  </section>
+
+  <!-- ===== Cátedra ===== -->
+  <section id="v-catedra" class="oculto">
+    <h2>La cátedra</h2>
+    <div class="card" id="cat-cont"></div>
+    <button class="btn sec" data-ir="inicio">Volver al inicio</button>
+    <button class="btn sec" id="b-salir">Cerrar sesión en este celular</button>
+  </section>
+
+</main>
+<nav id="nav" class="oculto">
+  <button data-ir="inicio"><span class="i">⌂</span>Inicio</button>
+  <button data-ir="qr"><span class="i">▦</span>Mi QR</button>
+  <button data-ir="asis"><span class="i">✓</span>Asistencia</button>
+  <button data-ir="notas"><span class="i">✎</span>Notas</button>
+  <button data-ir="nov"><span class="i">◉</span>Novedades</button>
+</nav>
+
+<script src="../config.js"></script>
+<script src="../catedra.js"></script>
+<script src="qrcode.js"></script>
 <script>
-/* La dirección del Apps Script está en config.js; el nombre de la cátedra sale de la hoja Config. */
+/* La dirección del Apps Script está en ../config.js; los datos de la cátedra salen de la hoja Config. */
 
-window.onerror = function (m) { try { msg("Error: " + m, "err"); } catch (e) {} };
-var TOKEN = "", ROS = {}, COM = null, TIPO = "", HOY = "", visto = {}, cola = [], CK = "", VK = "", RK = "";
-var total = 0, lastTxt = "", lastT = 0, syncing = false, timer = null, camTried = false;
-
+var D = null, LEG = "";
 function $(i) { return document.getElementById(i); }
-function pad(n) { return n < 10 ? "0" + n : "" + n; }
-function ahora() { var d = new Date(); return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds()); }
-function load(k, def) { try { var s = localStorage.getItem(k); return s ? JSON.parse(s) : def; } catch (e) { return def; } }
+function load(k, d) { try { var s = localStorage.getItem(k); return s ? JSON.parse(s) : d; } catch (e) { return d; } }
 function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
-function msg(t, c) { $("res").textContent = t; $("res").className = "res " + (c || ""); }
-function ver(id) { ["login", "sel", "esc", "resumen"].forEach(function (x) { $(x).style.display = x === id ? "block" : "none"; }); }
-function cnt() { $("cnt").textContent = Object.keys(visto).length + " de " + total + " presentes"; }
-function estado() {
-  var t = cola.length ? ("Pendientes de enviar: " + cola.length + " (se envían solos cuando haya señal)") : "Todo enviado a la planilla";
-  $("sync").textContent = t; $("rsync").textContent = t;
-}
-function lista(n) { var li = document.createElement("li"); li.textContent = n; $("lst").insertBefore(li, $("lst").firstChild); }
-function fill(id, arr) {
-  var u = $(id); u.innerHTML = "";
-  if (!arr.length) { var li = document.createElement("li"); li.textContent = "Ninguno"; u.appendChild(li); return; }
-  arr.forEach(function (n) { var li = document.createElement("li"); li.textContent = n; u.appendChild(li); });
-}
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+function norm(s) { return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim(); }
+function msg(id, t, c) { $(id).innerHTML = t ? '<div class="msg ' + (c || "err") + '">' + esc(t) + "</div>" : ""; }
 
-/* ---- comunicación con Apps Script ---- */
 function api(accion, datos) {
-  var body = JSON.stringify(Object.assign({ token: TOKEN, accion: accion }, datos || {}));
+  var body = JSON.stringify(Object.assign({ accion: accion, sesion: load("alu_sesion", "") }, datos || {}));
   return fetch(URL_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: body })
     .then(function (r) { return r.json(); })
-    .then(function (j) { if (j && j.error) { throw new Error(j.error); } return j; });
+    .then(function (j) { if (j && j.error) { var e = new Error(j.error); e.srv = true; throw e; } return j; });
 }
 
-/* ---- ingreso ---- */
-function arrancar() {
-  TOKEN = load("pb_token", "");
-  if (!TOKEN) { $("est").textContent = "Ingresá con tu código de ayudante"; ver("login"); return; }
-  $("est").textContent = "Cargando...";
-  api("estado").then(function (e) {
-    save("pb_estado", e); mostrarEstado(e);
-  }).catch(function (er) {
-    if (String(er.message).indexOf("Código") >= 0) { localStorage.removeItem("pb_token"); $("est").textContent = er.message; ver("login"); return; }
-    var e = load("pb_estado", null);
-    if (e) { mostrarEstado(e); } else { $("est").textContent = "Sin conexión. Abrí la página con señal al menos una vez antes de la clase."; }
-  });
+/* ---------- navegación ---------- */
+var VISTAS = ["legajo", "codigo", "inicio", "qr", "asis", "notas", "nov", "catedra"];
+function ir(v) {
+  VISTAS.forEach(function (x) { $("v-" + x).classList.toggle("oculto", x !== v); });
+  var adentro = ["legajo", "codigo"].indexOf(v) < 0;
+  $("nav").classList.toggle("oculto", !adentro);
+  $("b-salir-top").classList.toggle("oculto", !adentro);
+  [].forEach.call(document.querySelectorAll("nav button"), function (b) { b.classList.toggle("on", b.getAttribute("data-ir") === v); });
+  window.scrollTo(0, 0);
 }
-function mostrarEstado(e) {
-  HOY = e.hoy;
-  var ops = e.mias.length ? e.mias : e.todas;
-  $("est").textContent = e.mias.length ? ("Hoy (" + e.hoy + ") tenés turno en: " + e.mias.join(", ")) : "Hoy no tenés turno asignado. Modo prueba: elegí cualquier comisión.";
-  $("com").innerHTML = "";
-  ops.forEach(function (c) { var o = document.createElement("option"); o.value = c; o.textContent = "Comisión " + c; $("com").appendChild(o); });
-  /* Tipos de clase (hoja "Tipos de clase"): solo se pregunta si hay más de uno */
-  var tipos = e.tipos || [];
-  $("tipo").innerHTML = "";
-  tipos.forEach(function (t) { var o = document.createElement("option"); o.value = t; o.textContent = t; $("tipo").appendChild(o); });
-  $("tipoBox").style.display = tipos.length > 1 ? "block" : "none";
-  ver("sel");
-}
-$("entrar").onclick = function () {
-  var t = $("tok").value.trim(); if (!t) { return; }
-  save("pb_token", t); arrancar();
-};
-$("salir").onclick = function () { localStorage.removeItem("pb_token"); $("tok").value = ""; $("est").textContent = "Ingresá con tu código de ayudante"; ver("login"); };
-
-/* ---- clase ---- */
-$("ini").onclick = function () {
-  COM = $("com").value; TIPO = $("tipo").value || "";
-  var suf = HOY + "_" + COM + (TIPO ? "_" + TIPO : "");
-  RK = "ros_" + HOY + "_" + COM; CK = "cola_" + suf; VK = "vis_" + suf;
-  cola = load(CK, []); visto = load(VK, {});
-  api("roster", { com: COM }).then(function (r) { save(RK, r); iniciar(r); }).catch(function () {
-    var r = load(RK, null);
-    if (r) { iniciar(r); } else { $("est").textContent = "No hay lista guardada. Conectate una vez para descargarla."; }
-  });
-};
-function iniciar(r) {
-  ROS = {}; r.forEach(function (a) { ROS[a.l] = a; }); total = r.length;
-  $("lst").innerHTML = ""; Object.keys(visto).forEach(function (l) { if (ROS[l]) { lista(ROS[l].n); } });
-  $("est").textContent = "Comisión " + COM + (TIPO ? " · " + TIPO : "") + " - " + HOY;
-  msg("Apuntá la cámara al QR del alumno", "");
-  ver("esc"); cnt(); estado();
-  if (!camTried) { camTried = true; startCam(); }
-  if (!timer) { timer = setInterval(sync, 8000); window.addEventListener("online", sync); }
-  sync();
-}
-
-/* La firma del QR se verifica acá contra la lista de la comisión (sirve sin señal) */
-function procesar(txt) {
-  var t = Date.now(); if (txt === lastTxt && t - lastT < 2500) { return; } lastTxt = txt; lastT = t;
-  var p = (txt || "").split("|");
-  if (p.length !== 3 || p[0] !== "PAT1") { msg("QR no válido", "err"); return; }
-  var a = ROS[p[1]];
-  if (!a || a.c !== txt) { msg("Este QR no corresponde a esta comisión", "err"); return; }
-  if (visto[p[1]]) { msg(a.n + " ya estaba registrado", "warn"); return; }
-  visto[p[1]] = 1; cola.push({ l: p[1], ts: ahora() }); save(CK, cola); save(VK, visto);
-  var todos = Object.keys(visto).length >= total;
-  msg(a.n + " - PRESENTE" + (todos ? ". Ya están todos, podés terminar la clase." : ""), "ok");
-  if (navigator.vibrate) { navigator.vibrate(120); }
-  lista(a.n); cnt(); estado(); sync();
-}
-function sync() {
-  if (syncing || !cola.length) { estado(); return; }
-  syncing = true; var lote = cola.slice();
-  api("registrar", { com: COM, tipo: TIPO, items: lote }).then(function () {
-    syncing = false;
-    var ids = {}; lote.forEach(function (x) { ids[x.l] = 1; });
-    cola = cola.filter(function (x) { return !ids[x.l]; }); save(CK, cola); estado();
-  }).catch(function () { syncing = false; estado(); });
-}
-function resumen() {
-  var pres = [], aus = [];
-  Object.keys(ROS).forEach(function (l) { if (visto[l]) { pres.push(ROS[l].n); } else { aus.push(ROS[l].n); } });
-  $("rtit").textContent = "Comisión " + COM + (TIPO ? " · " + TIPO : "") + ": " + pres.length + " presentes y " + aus.length + " ausentes";
-  fill("rpres", pres); fill("raus", aus); estado(); sync(); ver("resumen");
-}
-$("fin").onclick = resumen;
-$("seguir").onclick = function () { ver("esc"); };
-$("otra").onclick = function () {
-  if (cola.length) { $("rsync").textContent = "Todavía hay pendientes. Esperá a tener señal antes de cambiar de comisión."; return; }
-  ver("sel");
-};
-
-/* ---- cámara en vivo ---- */
-function noCam() { $("v").style.display = "none"; msg("No se pudo abrir la cámara. Usá el botón para sacar una foto del QR.", "warn"); }
-function startCam() {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { noCam(); return; }
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false })
-    .then(function (s) { var v = $("v"); v.srcObject = s; v.play(); requestAnimationFrame(tick); })
-    .catch(function () { noCam(); });
-}
-function decodificar(c, cb) {
-  function conJsqr() {
-    if (typeof jsQR === "undefined") { cb(null, "no-lib"); return; }
-    var x = c.getContext("2d"); var im = x.getImageData(0, 0, c.width, c.height); var q = jsQR(im.data, im.width, im.height);
-    cb(q && q.data ? q.data : null);
-  }
-  if (window.BarcodeDetector) {
-    try { new BarcodeDetector({ formats: ["qr_code"] }).detect(c).then(function (r) { if (r.length) { cb(r[0].rawValue); } else { conJsqr(); } }).catch(function () { conJsqr(); }); }
-    catch (e) { conJsqr(); }
-  } else { conJsqr(); }
-}
-function tick() {
-  var v = $("v");
-  if (v.readyState === v.HAVE_ENOUGH_DATA && $("esc").style.display === "block") {
-    var c = $("cv"); c.width = v.videoWidth; c.height = v.videoHeight;
-    c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
-    decodificar(c, function (t) { if (t) { procesar(t); } });
-  }
-  requestAnimationFrame(tick);
-}
-
-/* ---- foto (respaldo si la cámara en vivo no anda) ---- */
-$("foto").addEventListener("change", function (ev) {
-  var f = ev.target.files[0];
-  if (!f) { msg("No llegó la foto", "err"); return; }
-  msg("Foto recibida, leyendo...", "warn");
-  var img = new Image();
-  img.onerror = function () { msg("No se pudo abrir la foto", "err"); };
-  img.onload = function () {
-    var c = $("cv"); var s = Math.min(1, 1600 / Math.max(img.width, img.height));
-    c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
-    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
-    decodificar(c, function (t, err) {
-      if (t) { lastTxt = ""; procesar(t); }
-      else if (err) { msg("El lector de QR no cargó en este celular.", "err"); }
-      else { msg("No se leyó el QR. Acercate y que se vea completo.", "err"); }
-    });
-  };
-  img.src = URL.createObjectURL(f); ev.target.value = "";
+document.addEventListener("click", function (e) {
+  var b = e.target.closest("[data-ir]");
+  if (b) { ir(b.getAttribute("data-ir")); }
 });
 
-cargarCatedra(function (c) { var t = "Asistencia · " + (c.CATEDRA_CORTO || c.CATEDRA_NOMBRE); document.title = t; $("tit").textContent = t; });
-arrancar();
+/* ---------- ingreso ---------- */
+function pedir(reenvio) {
+  var leg = reenvio ? LEG : $("in-leg").value.trim();
+  if (!leg) { msg("m-leg", "Escribí tu legajo."); return; }
+  var b = reenvio ? $("b-reenviar") : $("b-pedir"); b.disabled = true;
+  msg(reenvio ? "m-cod" : "m-leg", "Enviando...", "warn");
+  api("alu_pedir", { legajo: leg }).then(function (r) {
+    LEG = leg; save("alu_leg", leg);
+    $("t-mail").textContent = "Te mandamos un código a " + r.mail + ". Escribilo acá abajo.";
+    msg("m-leg", ""); msg("m-cod", reenvio ? "Te mandamos un código nuevo." : "", "ok");
+    ir("codigo"); $("in-cod").value = ""; $("in-cod").focus();
+  }).catch(function (e) {
+    msg(reenvio ? "m-cod" : "m-leg", e.srv ? e.message : "No hay conexión. Probá de nuevo cuando tengas señal.");
+  }).then(function () { b.disabled = false; });
+}
+$("b-pedir").onclick = function () { pedir(false); };
+$("in-leg").onkeydown = function (e) { if (e.key === "Enter") { pedir(false); } };
+$("b-reenviar").onclick = function () { pedir(true); };
+$("b-otro").onclick = function () { msg("m-cod", ""); ir("legajo"); };
+$("in-cod").oninput = function () { this.value = this.value.replace(/\D/g, "").slice(0, 6); if (this.value.length === 6) { validar(); } };
+$("b-validar").onclick = validar;
+function validar() {
+  var c = $("in-cod").value.trim();
+  if (c.length !== 6) { msg("m-cod", "El código tiene 6 números."); return; }
+  $("b-validar").disabled = true; msg("m-cod", "Verificando...", "warn");
+  api("alu_validar", { legajo: LEG, codigo: c }).then(function (r) {
+    save("alu_sesion", r.sesion); msg("m-cod", "");
+    return actualizar(true);
+  }).catch(function (e) {
+    msg("m-cod", e.srv ? e.message : "No hay conexión. Probá de nuevo cuando tengas señal.");
+  }).then(function () { $("b-validar").disabled = false; });
+}
+function salir() {
+  if (!confirm("¿Cerrar sesión en este celular? Para volver a entrar vas a necesitar un código nuevo por mail.")) { return; }
+  api("alu_salir").catch(function () {});
+  ["alu_sesion", "alu_datos"].forEach(function (k) { localStorage.removeItem(k); });
+  D = null; $("in-leg").value = ""; ir("legajo");
+}
+$("b-salir").onclick = salir;
+$("b-salir-top").onclick = salir;
+
+/* ---------- datos ---------- */
+function actualizar(irInicio) {
+  return api("alu_datos").then(function (d) {
+    D = d; save("alu_datos", d); pintar(); if (irInicio) { ir("inicio"); }
+  }).catch(function (e) {
+    if (e.srv && e.message === "SESION") {
+      localStorage.removeItem("alu_sesion"); localStorage.removeItem("alu_datos");
+      msg("m-leg", "Tu sesión venció. Volvé a entrar con tu legajo.", "warn"); ir("legajo"); return;
+    }
+    if (irInicio) {
+      if (D) { pintar(); ir("inicio"); }
+      else { msg("m-leg", e.srv ? e.message : "Necesitás señal para cargar tus datos la primera vez.", "warn"); ir("legajo"); }
+    }
+  });
+}
+
+function campo(obj, re) {
+  if (!obj) { return null; }
+  for (var k in obj) { if (re.test(norm(k))) { return obj[k]; } }
+  return null;
+}
+
+function pintar() {
+  if (!D) { return; }
+  var a = D.alumno, r = D.resumen;
+  $("hsub").textContent = a.apellido + ", " + a.nombre + " · Comisión " + a.com;
+  $("saludo").textContent = "Hola, " + a.nombre.split(" ")[0];
+  $("t-act").textContent = "Datos actualizados el " + D.actualizado + (navigator.onLine ? "" : " (sin conexión ahora)");
+
+  /* faltas */
+  var quedan = campo(r, /te quedan|quedan/), faltas = campo(r, /^faltas$/), perm = campo(r, /permitidas/) || (D.config && D.config.FALTAS_PERMITIDAS);
+  var sit = campo(r, /situaci/);
+  var q = parseInt(quedan, 10), cls = "est-ok";
+  if (!isNaN(q) && q <= 0) { cls = "est-err"; } else if (!isNaN(q) && q <= 2) { cls = "est-warn"; }
+  var htmlF = r
+    ? '<div class="muted">Faltas que te quedan</div><div class="big">' + esc(quedan == null ? "-" : quedan) + '</div>' +
+      '<div class="muted" style="margin-top:6px">Llevás ' + esc(faltas == null ? "-" : faltas) + " de " + esc(perm || "-") + " faltas permitidas en el año</div>" +
+      (sit ? '<div class="msg ' + cls + '" style="margin-bottom:0">' + esc(sit) + "</div>" : "")
+    : '<div class="muted">Todavía no hay datos de asistencia.</div>';
+  /* Si el servidor manda la asistencia por tipo de clase, se usa esa (incluye el cálculo del %) */
+  var AS = D.asistencia, htmlCalc = "", htmlTipos = "";
+  if (AS && AS.tipos && AS.tipos.length) {
+    var ob = AS.tipos.filter(function (t) { return t.obligatoria; });
+    var juntas = AS.regla === "TODAS JUNTAS" || ob.length <= 1;
+    var base = AS.regla === "TODAS JUNTAS" ? AS.total : ob[0];
+    if (base) {
+      var qq = base.quedan, cl = qq < 0 ? "est-err" : (qq <= 2 ? "est-warn" : "est-ok");
+      htmlF = '<div class="muted">Faltas que te quedan' + (ob.length > 1 && AS.regla !== "TODAS JUNTAS" ? " en " + esc(base.tipo) : "") + '</div>' +
+        '<div class="big">' + esc(Math.max(qq, 0)) + '</div>' +
+        '<div class="muted" style="margin-top:6px">Llevás ' + esc(base.faltas) + " de " + esc(base.permitidas) + " faltas permitidas en el año</div>";
+      if (!juntas) {
+        htmlF += ob.slice(1).map(function (t) { return '<div class="fila"><span>' + esc(t.tipo) + '</span><strong>te quedan ' + esc(Math.max(t.quedan, 0)) + "</strong></div>"; }).join("");
+      }
+      htmlF += '<div class="msg ' + (AS.situacion.indexOf("Super") === 0 ? "est-err" : (AS.situacion.indexOf("límite") >= 0 ? "est-warn" : "est-ok")) + '" style="margin-bottom:0">' + esc(AS.situacion) + "</div>";
+    }
+    /* Detalle por tipo */
+    htmlTipos = AS.tipos.map(function (t) {
+      return '<div class="card"><h3 style="margin-top:0">' + esc(t.tipo) + (t.obligatoria ? "" : ' <span class="chip">no obligatoria</span>') + "</h3>" +
+        '<div class="fila"><span>Clases dadas</span><strong>' + esc(t.clasesDadas) + " de " + esc(t.clasesAnio) + "</strong></div>" +
+        '<div class="fila"><span>Presentes</span><strong>' + esc(t.presentes) + "</strong></div>" +
+        (t.justificadas ? '<div class="fila"><span>Faltas justificadas</span><strong>' + esc(t.justificadas) + "</strong></div>" : "") +
+        '<div class="fila"><span>Faltas</span><strong>' + esc(t.faltas) + "</strong></div>" +
+        (t.obligatoria ? '<div class="fila"><span>Te quedan</span><strong>' + esc(Math.max(t.quedan, 0)) + "</strong></div>" : "") + "</div>";
+    }).join("");
+    /* ¿Cómo se calcula? */
+    var filasC = ob.map(function (t) {
+      if (t.modo === "A mano") {
+        return "<li><b>" + esc(t.tipo) + ":</b> son " + esc(t.clasesAnio) + " clases en el año y la cátedra fija " + esc(t.permitidas) +
+          " faltas permitidas, así que tenés que estar en " + esc(t.minimo) + ".</li>";
+      }
+      return "<li><b>" + esc(t.tipo) + ":</b> son " + esc(t.clasesAnio) + " clases en el año. El " + esc(t.pct) + "% da " +
+        esc(String(Math.round(t.clasesAnio * t.pct) / 100).replace(".", ",")) + ", así que tenés que estar en " + esc(t.minimo) +
+        " y podés faltar a " + esc(t.permitidas) + ".</li>";
+    }).join("");
+    if (AS.regla === "TODAS JUNTAS" && ob.length > 1) {
+      filasC += "<li><b>En total:</b> se suman las " + esc(AS.total.clases) + " clases obligatorias y podés faltar a " + esc(AS.total.permitidas) + " entre todas.</li>";
+    } else if (ob.length > 1) {
+      filasC += "<li>Cada tipo de clase se cuenta por separado: pasarte en uno solo ya alcanza para perder la regularidad.</li>";
+    }
+    var auto = ob.filter(function (t) { return t.modo !== "A mano"; });
+    htmlCalc = '<div class="card"><h3 style="margin-top:0">¿Cómo se calculan tus faltas?</h3>' +
+      (auto.length ? '<p class="muted" style="margin-top:0">Para ser regular tenés que cumplir el ' + esc(auto[0].pct) + '% de las actividades obligatorias. Si la cuenta da con coma, se redondea para arriba la cantidad de clases a las que tenés que ir.</p>' : "") +
+      '<ul style="padding-left:18px;margin:0">' + filasC + "</ul></div>";
+  }
+  $("c-faltas").innerHTML = htmlF;
+
+  /* último aviso */
+  var av = D.avisos || [];
+  $("c-ultimo").innerHTML = av.length ? '<h3>Último aviso</h3>' + tarjetaAviso(av[0]) : "";
+
+  /* QR */
+  $("qr-nom").textContent = a.apellido + ", " + a.nombre;
+  $("qr-dat").textContent = "Legajo " + a.legajo + " · Comisión " + a.com;
+  if (D.qr && window.qrcode) {
+    var qr = qrcode(0, "M"); qr.addData(D.qr); qr.make();
+    $("qrbox").innerHTML = qr.createImgTag(8, 8, "Mi código QR");
+  } else {
+    $("qrbox").innerHTML = '<div class="msg warn">Tu QR todavía no está disponible. Avisá a la secretaría.</div>';
+  }
+
+  /* asistencia */
+  if (AS && AS.tipos && AS.tipos.length) {
+    $("asis-cont").innerHTML = '<div class="card">' + htmlF + "</div>" + htmlTipos + htmlCalc;
+  } else if (r) {
+    var filas = "";
+    for (var k in r) {
+      if (/legajo|apellido|nombre|comisi|alumno/.test(norm(k))) { continue; }
+      filas += '<div class="fila"><span>' + esc(k) + "</span><strong>" + esc(r[k] === "" ? "-" : r[k]) + "</strong></div>";
+    }
+    $("asis-cont").innerHTML = '<div class="card">' + htmlF + '</div><div class="card">' + filas + "</div>";
+  } else {
+    $("asis-cont").innerHTML = '<div class="card muted">Todavía no hay datos de asistencia.</div>';
+  }
+
+  /* notas */
+  $("notas-cont").innerHTML = tablaNotas(D.notas);
+
+  /* novedades */
+  var ig = (D.config && D.config.INSTAGRAM) || CATEDRA.INSTAGRAM;
+  $("b-ig").href = ig || "#";
+  $("b-ig").classList.toggle("oculto", !ig);
+  $("nov-cont").innerHTML = av.length ? av.map(tarjetaAviso).join("") : '<div class="card muted">No hay avisos por ahora.</div>';
+
+  /* cátedra */
+  var cfg = D.config || {}, links = "";
+  if (cfg.AULASWEB) { links += '<div class="fila"><span>AulasWeb</span><a href="' + esc(cfg.AULASWEB) + '" target="_blank" rel="noopener">Abrir</a></div>'; }
+  var igUsr = cfg.INSTAGRAM_USUARIO || CATEDRA.INSTAGRAM_USUARIO || "Abrir", mail = cfg.CONTACTO || CATEDRA.CONTACTO;
+  if (ig) { links += '<div class="fila"><span>Instagram</span><a href="' + esc(ig) + '" target="_blank" rel="noopener">' + esc(igUsr) + '</a></div>'; }
+  if (mail) { links += '<div class="fila"><span>Secretaría</span><a href="mailto:' + esc(mail) + '">' + esc(mail) + "</a></div>"; }
+  if (cfg.CRONOGRAMA) { links += '<div class="fila"><span>Cronograma</span><a href="' + esc(cfg.CRONOGRAMA) + '" target="_blank" rel="noopener">Ver</a></div>'; }
+  if (cfg.CARTELERA) { links += '<div class="fila"><span>Cartelera</span><span>' + esc(cfg.CARTELERA) + "</span></div>"; }
+  $("cat-cont").innerHTML = links;
+}
+
+function tarjetaAviso(x) {
+  return '<div class="card aviso"><div style="margin-bottom:6px"><span class="chip">' + (x.general ? "Para todas las comisiones" : "Tu comisión") + "</span>" +
+    '<span class="muted">' + esc(x.fecha) + (x.editado ? " · editado" : "") + "</span></div>" +
+    (x.titulo ? '<div style="font-weight:600;margin-bottom:4px">' + esc(x.titulo) + "</div>" : "") +
+    '<div style="white-space:pre-wrap">' + esc(x.texto) + "</div>" +
+    (x.autor ? '<div class="muted" style="margin-top:6px">' + esc(x.autor) + "</div>" : "") + "</div>";
+}
+
+function tablaNotas(n) {
+  if (!n) { return '<div class="card muted">Todavía no hay notas cargadas.</div>'; }
+  var g = {}, cond = null, hay = false;
+  for (var k in n) {
+    var m = norm(k).match(/^p\s*(\d)\s*f\s*(\d)/);
+    if (m) { g[m[1]] = g[m[1]] || {}; g[m[1]][m[2]] = n[k]; if (n[k] !== "") { hay = true; } }
+    else if (/condici/.test(norm(k))) { cond = n[k]; }
+  }
+  var ps = Object.keys(g).sort();
+  if (!ps.length) { return '<div class="card muted">Todavía no hay notas cargadas.</div>'; }
+  var h = '<div class="card"><table><tr><th>Parcial</th><th>1.ª</th><th>2.ª</th><th>3.ª</th><th>4.ª</th></tr>';
+  ps.forEach(function (p) {
+    h += "<tr><td>" + p + ".º parcial</td>";
+    for (var f = 1; f <= 4; f++) { var v = g[p][f]; h += "<td>" + esc(v === undefined || v === "" ? "–" : v) + "</td>"; }
+    h += "</tr>";
+  });
+  h += '</table><p class="muted" style="margin-bottom:0">Cada columna es una fecha del parcial. Aprobás con 4 o más.</p></div>';
+  if (cond) { h += '<div class="card"><div class="muted">Condición</div><div style="font-size:20px;font-weight:700">' + esc(cond) + "</div></div>"; }
+  if (!hay) { h = '<div class="card muted">Todavía no hay notas cargadas.</div>'; }
+  return h;
+}
+
+/* ---------- arranque ---------- */
+cargarCatedra(function (c) {
+  document.title = c.CATEDRA_CORTO || c.CATEDRA_NOMBRE;
+  $("htit").textContent = c.CATEDRA_NOMBRE;
+  if (!D) { $("hsub").textContent = c.INSTITUCION || ""; }
+  if (c.COLOR) { document.documentElement.style.setProperty("--azul", c.COLOR); }
+  colorCatedra(c);
+});
+if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(function () {}); }
+(function () {
+  LEG = load("alu_leg", "");
+  if (LEG) { $("in-leg").value = LEG; }
+  if (!load("alu_sesion", "")) { ir("legajo"); return; }
+  D = load("alu_datos", null);
+  if (D) { pintar(); ir("inicio"); }
+  actualizar(!D);
+  window.addEventListener("online", function () { actualizar(false); });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && navigator.onLine) { actualizar(false); } });
+})();
 </script>
 </body>
 </html>
