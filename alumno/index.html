@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16325c">
+<title>Patología B</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Patología B">
+<style>
+:root{--azul:#16325c;--azul2:#1a56db;--fondo:#f4f5f7;--carta:#fff;--txt:#1b1b1b;--sec:#5b6270;--borde:#e3e5ea;--ok:#127a3c;--okf:#dcf3e4;--warn:#8a5a00;--warnf:#fdf0cf;--err:#a52222;--errf:#fbdede}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--fondo);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:16px;line-height:1.45}
+header{background:var(--azul);color:#fff;padding:14px 18px calc(14px);padding-top:calc(14px + env(safe-area-inset-top))}
+header .t{font-size:17px;font-weight:600}
+header .s{font-size:13px;opacity:.8}
+main{max-width:560px;margin:0 auto;padding:16px 16px 96px}
+h2{font-size:20px;margin:6px 0 12px}
+h3{font-size:16px;margin:18px 0 8px}
+.card{background:var(--carta);border:1px solid var(--borde);border-radius:14px;padding:16px;margin:0 0 12px}
+.big{font-size:40px;font-weight:700;line-height:1}
+.muted{color:var(--sec);font-size:14px}
+.btn{display:block;width:100%;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:600;background:var(--azul2);color:#fff;text-align:center;text-decoration:none;cursor:pointer;margin:10px 0}
+.btn.sec{background:#e8ebf1;color:var(--azul)}
+.btn:disabled{opacity:.5}
+input{width:100%;font-size:20px;padding:12px 14px;border:1px solid #c9cdd6;border-radius:12px;margin:6px 0;background:#fff}
+input.cod{letter-spacing:8px;text-align:center;font-size:26px}
+.aviso{border-left:4px solid var(--azul2);border-radius:0}
+.chip{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:#e8ebf1;color:var(--azul);margin-right:6px}
+.msg{border-radius:12px;padding:12px;margin:10px 0;font-size:15px}
+.msg.err{background:var(--errf);color:var(--err)}.msg.ok{background:var(--okf);color:var(--ok)}.msg.warn{background:var(--warnf);color:var(--warn)}
+.est-ok{background:var(--okf);color:var(--ok)}.est-warn{background:var(--warnf);color:var(--warn)}.est-err{background:var(--errf);color:var(--err)}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--borde)}
+th:first-child,td:first-child{text-align:left}
+.fila{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--borde)}
+.fila:last-child{border-bottom:0}
+#qrbox{background:#fff;border-radius:16px;padding:18px;display:flex;justify-content:center}
+#qrbox img,#qrbox canvas{width:100%;max-width:320px;height:auto;image-rendering:pixelated}
+nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--borde);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;padding:10px 2px 12px;font-size:12px;color:var(--sec);cursor:pointer}
+nav button .i{display:block;font-size:20px;line-height:1.2}
+nav button.on{color:var(--azul2);font-weight:600}
+.oculto{display:none!important}
+a{color:var(--azul2)}
+</style>
+</head>
+<body>
+<header><div class="t">Cátedra B de Patología</div><div class="s" id="hsub">FCM · UNLP</div></header>
+<main>
+
+  <!-- ===== Ingreso ===== -->
+  <section id="v-legajo" class="oculto">
+    <h2>Entrá con tu legajo</h2>
+    <p class="muted">Te mandamos un código de 6 números al mail que tenés registrado en el SIU Guaraní. Si lo cambiaste, avisá a la secretaría.</p>
+    <label>Legajo<input id="in-leg" inputmode="numeric" autocomplete="off" placeholder="Ej: 123456"></label>
+    <div id="m-leg"></div>
+    <button class="btn" id="b-pedir">Mandarme el código</button>
+  </section>
+
+  <section id="v-codigo" class="oculto">
+    <h2>Revisá tu mail</h2>
+    <p class="muted" id="t-mail"></p>
+    <input id="in-cod" class="cod" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••">
+    <div id="m-cod"></div>
+    <button class="btn" id="b-validar">Entrar</button>
+    <button class="btn sec" id="b-reenviar">Reenviar código</button>
+    <button class="btn sec" id="b-otro">Cambiar el legajo</button>
+    <p class="muted">Si no te llega en un par de minutos, revisá la carpeta de spam o promociones.</p>
+  </section>
+
+  <!-- ===== Inicio ===== -->
+  <section id="v-inicio" class="oculto">
+    <h2 id="saludo"></h2>
+    <div class="card" id="c-faltas"></div>
+    <button class="btn" data-ir="qr">Mostrar mi QR</button>
+    <div id="c-ultimo"></div>
+    <button class="btn sec" data-ir="catedra">Información de la cátedra</button>
+    <p class="muted" id="t-act"></p>
+  </section>
+
+  <!-- ===== Mi QR ===== -->
+  <section id="v-qr" class="oculto">
+    <h2>Mi QR</h2>
+    <div id="qrbox"></div>
+    <div class="card" style="margin-top:12px;text-align:center">
+      <div style="font-size:18px;font-weight:600" id="qr-nom"></div>
+      <div class="muted" id="qr-dat"></div>
+    </div>
+    <p class="muted">Mostráselo al ayudante al entrar a la clase. Funciona sin señal. Subí el brillo si cuesta leerlo.</p>
+  </section>
+
+  <!-- ===== Asistencia ===== -->
+  <section id="v-asis" class="oculto">
+    <h2>Asistencia</h2>
+    <div id="asis-cont"></div>
+    <p class="muted">Las faltas con certificado cuentan como presente solo cuando la secretaría las autoriza.</p>
+  </section>
+
+  <!-- ===== Notas ===== -->
+  <section id="v-notas" class="oculto">
+    <h2>Notas de parciales</h2>
+    <div id="notas-cont"></div>
+  </section>
+
+  <!-- ===== Novedades ===== -->
+  <section id="v-nov" class="oculto">
+    <h2>Novedades</h2>
+    <a class="btn sec" id="b-ig" target="_blank" rel="noopener">Seguí a la cátedra en Instagram</a>
+    <div id="nov-cont"></div>
+  </section>
+
+  <!-- ===== Cátedra ===== -->
+  <section id="v-catedra" class="oculto">
+    <h2>La cátedra</h2>
+    <div class="card" id="cat-cont"></div>
+    <button class="btn sec" data-ir="inicio">Volver al inicio</button>
+    <button class="btn sec" id="b-salir">Cerrar sesión en este celular</button>
+  </section>
+
+</main>
+<nav id="nav" class="oculto">
+  <button data-ir="inicio"><span class="i">⌂</span>Inicio</button>
+  <button data-ir="qr"><span class="i">▦</span>Mi QR</button>
+  <button data-ir="asis"><span class="i">✓</span>Asistencia</button>
+  <button data-ir="notas"><span class="i">✎</span>Notas</button>
+  <button data-ir="nov"><span class="i">◉</span>Novedades</button>
+</nav>
+
+<script src="qrcode.js"></script>
+<script>
+/* ===== CONFIGURACIÓN ===== */
+var URL_API = "https://script.google.com/macros/s/AKfycbzTKNzGmQaeMGLIfW1Zw2uMNNJFByKEM8o7B-ongWkCACCEQlIrW4DL3XTss3oihwxTsQ/exec";
+var INSTAGRAM = "https://www.instagram.com/patologiab.unlp/";
+var MAIL_CATEDRA = "patologiab@med.unlp.edu.ar";
+/* ========================= */
+
+var D = null, LEG = "";
+function $(i) { return document.getElementById(i); }
+function load(k, d) { try { var s = localStorage.getItem(k); return s ? JSON.parse(s) : d; } catch (e) { return d; } }
+function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+function norm(s) { return String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim(); }
+function msg(id, t, c) { $(id).innerHTML = t ? '<div class="msg ' + (c || "err") + '">' + esc(t) + "</div>" : ""; }
+
+function api(accion, datos) {
+  var body = JSON.stringify(Object.assign({ accion: accion, sesion: load("alu_sesion", "") }, datos || {}));
+  return fetch(URL_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: body })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { if (j && j.error) { var e = new Error(j.error); e.srv = true; throw e; } return j; });
+}
+
+/* ---------- navegación ---------- */
+var VISTAS = ["legajo", "codigo", "inicio", "qr", "asis", "notas", "nov", "catedra"];
+function ir(v) {
+  VISTAS.forEach(function (x) { $("v-" + x).classList.toggle("oculto", x !== v); });
+  var adentro = ["legajo", "codigo"].indexOf(v) < 0;
+  $("nav").classList.toggle("oculto", !adentro);
+  [].forEach.call(document.querySelectorAll("nav button"), function (b) { b.classList.toggle("on", b.getAttribute("data-ir") === v); });
+  window.scrollTo(0, 0);
+}
+document.addEventListener("click", function (e) {
+  var b = e.target.closest("[data-ir]");
+  if (b) { ir(b.getAttribute("data-ir")); }
+});
+
+/* ---------- ingreso ---------- */
+function pedir(reenvio) {
+  var leg = reenvio ? LEG : $("in-leg").value.trim();
+  if (!leg) { msg("m-leg", "Escribí tu legajo."); return; }
+  var b = reenvio ? $("b-reenviar") : $("b-pedir"); b.disabled = true;
+  msg(reenvio ? "m-cod" : "m-leg", "Enviando...", "warn");
+  api("alu_pedir", { legajo: leg }).then(function (r) {
+    LEG = leg; save("alu_leg", leg);
+    $("t-mail").textContent = "Te mandamos un código a " + r.mail + ". Escribilo acá abajo.";
+    msg("m-leg", ""); msg("m-cod", reenvio ? "Te mandamos un código nuevo." : "", "ok");
+    ir("codigo"); $("in-cod").value = ""; $("in-cod").focus();
+  }).catch(function (e) {
+    msg(reenvio ? "m-cod" : "m-leg", e.srv ? e.message : "No hay conexión. Probá de nuevo cuando tengas señal.");
+  }).then(function () { b.disabled = false; });
+}
+$("b-pedir").onclick = function () { pedir(false); };
+$("in-leg").onkeydown = function (e) { if (e.key === "Enter") { pedir(false); } };
+$("b-reenviar").onclick = function () { pedir(true); };
+$("b-otro").onclick = function () { msg("m-cod", ""); ir("legajo"); };
+$("in-cod").oninput = function () { this.value = this.value.replace(/\D/g, "").slice(0, 6); if (this.value.length === 6) { validar(); } };
+$("b-validar").onclick = validar;
+function validar() {
+  var c = $("in-cod").value.trim();
+  if (c.length !== 6) { msg("m-cod", "El código tiene 6 números."); return; }
+  $("b-validar").disabled = true; msg("m-cod", "Verificando...", "warn");
+  api("alu_validar", { legajo: LEG, codigo: c }).then(function (r) {
+    save("alu_sesion", r.sesion); msg("m-cod", "");
+    return actualizar(true);
+  }).catch(function (e) {
+    msg("m-cod", e.srv ? e.message : "No hay conexión. Probá de nuevo cuando tengas señal.");
+  }).then(function () { $("b-validar").disabled = false; });
+}
+$("b-salir").onclick = function () {
+  api("alu_salir").catch(function () {});
+  ["alu_sesion", "alu_datos"].forEach(function (k) { localStorage.removeItem(k); });
+  D = null; $("in-leg").value = ""; ir("legajo");
+};
+
+/* ---------- datos ---------- */
+function actualizar(irInicio) {
+  return api("alu_datos").then(function (d) {
+    D = d; save("alu_datos", d); pintar(); if (irInicio) { ir("inicio"); }
+  }).catch(function (e) {
+    if (e.srv && e.message === "SESION") {
+      localStorage.removeItem("alu_sesion"); localStorage.removeItem("alu_datos");
+      msg("m-leg", "Tu sesión venció. Volvé a entrar con tu legajo.", "warn"); ir("legajo"); return;
+    }
+    if (irInicio) {
+      if (D) { pintar(); ir("inicio"); }
+      else { msg("m-leg", e.srv ? e.message : "Necesitás señal para cargar tus datos la primera vez.", "warn"); ir("legajo"); }
+    }
+  });
+}
+
+function campo(obj, re) {
+  if (!obj) { return null; }
+  for (var k in obj) { if (re.test(norm(k))) { return obj[k]; } }
+  return null;
+}
+
+function pintar() {
+  if (!D) { return; }
+  var a = D.alumno, r = D.resumen;
+  $("hsub").textContent = a.apellido + ", " + a.nombre + " · Comisión " + a.com;
+  $("saludo").textContent = "Hola, " + a.nombre.split(" ")[0];
+  $("t-act").textContent = "Datos actualizados el " + D.actualizado + (navigator.onLine ? "" : " (sin conexión ahora)");
+
+  /* faltas */
+  var quedan = campo(r, /te quedan|quedan/), faltas = campo(r, /^faltas$/), perm = campo(r, /permitidas/) || (D.config && D.config.FALTAS_PERMITIDAS);
+  var sit = campo(r, /situaci/);
+  var q = parseInt(quedan, 10), cls = "est-ok";
+  if (!isNaN(q) && q <= 0) { cls = "est-err"; } else if (!isNaN(q) && q <= 2) { cls = "est-warn"; }
+  var htmlF = r
+    ? '<div class="muted">Faltas que te quedan</div><div class="big">' + esc(quedan == null ? "-" : quedan) + '</div>' +
+      '<div class="muted" style="margin-top:6px">Llevás ' + esc(faltas == null ? "-" : faltas) + " de " + esc(perm || "-") + " faltas permitidas en el año</div>" +
+      (sit ? '<div class="msg ' + cls + '" style="margin-bottom:0">' + esc(sit) + "</div>" : "")
+    : '<div class="muted">Todavía no hay datos de asistencia.</div>';
+  $("c-faltas").innerHTML = htmlF;
+
+  /* último aviso */
+  var av = D.avisos || [];
+  $("c-ultimo").innerHTML = av.length ? '<h3>Último aviso</h3>' + tarjetaAviso(av[0]) : "";
+
+  /* QR */
+  $("qr-nom").textContent = a.apellido + ", " + a.nombre;
+  $("qr-dat").textContent = "Legajo " + a.legajo + " · Comisión " + a.com;
+  if (D.qr && window.qrcode) {
+    var qr = qrcode(0, "M"); qr.addData(D.qr); qr.make();
+    $("qrbox").innerHTML = qr.createImgTag(8, 8, "Mi código QR");
+  } else {
+    $("qrbox").innerHTML = '<div class="msg warn">Tu QR todavía no está disponible. Avisá a la secretaría.</div>';
+  }
+
+  /* asistencia */
+  if (r) {
+    var filas = "";
+    for (var k in r) {
+      if (/legajo|apellido|nombre|comisi|alumno/.test(norm(k))) { continue; }
+      filas += '<div class="fila"><span>' + esc(k) + "</span><strong>" + esc(r[k] === "" ? "-" : r[k]) + "</strong></div>";
+    }
+    $("asis-cont").innerHTML = '<div class="card">' + htmlF + '</div><div class="card">' + filas + "</div>";
+  } else {
+    $("asis-cont").innerHTML = '<div class="card muted">Todavía no hay datos de asistencia.</div>';
+  }
+
+  /* notas */
+  $("notas-cont").innerHTML = tablaNotas(D.notas);
+
+  /* novedades */
+  $("b-ig").href = (D.config && D.config.INSTAGRAM) || INSTAGRAM;
+  $("nov-cont").innerHTML = av.length ? av.map(tarjetaAviso).join("") : '<div class="card muted">No hay avisos por ahora.</div>';
+
+  /* cátedra */
+  var cfg = D.config || {}, links = "";
+  if (cfg.AULASWEB) { links += '<div class="fila"><span>AulasWeb</span><a href="' + esc(cfg.AULASWEB) + '" target="_blank" rel="noopener">Abrir</a></div>'; }
+  links += '<div class="fila"><span>Instagram</span><a href="' + esc(cfg.INSTAGRAM || INSTAGRAM) + '" target="_blank" rel="noopener">@patologiab.unlp</a></div>';
+  links += '<div class="fila"><span>Secretaría</span><a href="mailto:' + MAIL_CATEDRA + '">' + MAIL_CATEDRA + "</a></div>";
+  if (cfg.CRONOGRAMA) { links += '<div class="fila"><span>Cronograma</span><a href="' + esc(cfg.CRONOGRAMA) + '" target="_blank" rel="noopener">Ver</a></div>'; }
+  if (cfg.CARTELERA) { links += '<div class="fila"><span>Cartelera</span><span>' + esc(cfg.CARTELERA) + "</span></div>"; }
+  $("cat-cont").innerHTML = links;
+}
+
+function tarjetaAviso(x) {
+  return '<div class="card aviso"><div style="margin-bottom:6px"><span class="chip">' + (x.general ? "Para todas las comisiones" : "Tu comisión") + "</span>" +
+    '<span class="muted">' + esc(x.fecha) + (x.editado ? " · editado" : "") + "</span></div>" +
+    (x.titulo ? '<div style="font-weight:600;margin-bottom:4px">' + esc(x.titulo) + "</div>" : "") +
+    '<div style="white-space:pre-wrap">' + esc(x.texto) + "</div>" +
+    (x.autor ? '<div class="muted" style="margin-top:6px">' + esc(x.autor) + "</div>" : "") + "</div>";
+}
+
+function tablaNotas(n) {
+  if (!n) { return '<div class="card muted">Todavía no hay notas cargadas.</div>'; }
+  var g = {}, cond = null, hay = false;
+  for (var k in n) {
+    var m = norm(k).match(/^p\s*(\d)\s*f\s*(\d)/);
+    if (m) { g[m[1]] = g[m[1]] || {}; g[m[1]][m[2]] = n[k]; if (n[k] !== "") { hay = true; } }
+    else if (/condici/.test(norm(k))) { cond = n[k]; }
+  }
+  var ps = Object.keys(g).sort();
+  if (!ps.length) { return '<div class="card muted">Todavía no hay notas cargadas.</div>'; }
+  var h = '<div class="card"><table><tr><th>Parcial</th><th>1.ª</th><th>2.ª</th><th>3.ª</th><th>4.ª</th></tr>';
+  ps.forEach(function (p) {
+    h += "<tr><td>" + p + ".º parcial</td>";
+    for (var f = 1; f <= 4; f++) { var v = g[p][f]; h += "<td>" + esc(v === undefined || v === "" ? "–" : v) + "</td>"; }
+    h += "</tr>";
+  });
+  h += '</table><p class="muted" style="margin-bottom:0">Cada columna es una fecha del parcial. Aprobás con 4 o más.</p></div>';
+  if (cond) { h += '<div class="card"><div class="muted">Condición</div><div style="font-size:20px;font-weight:700">' + esc(cond) + "</div></div>"; }
+  if (!hay) { h = '<div class="card muted">Todavía no hay notas cargadas.</div>'; }
+  return h;
+}
+
+/* ---------- arranque ---------- */
+if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(function () {}); }
+(function () {
+  LEG = load("alu_leg", "");
+  if (LEG) { $("in-leg").value = LEG; }
+  if (!load("alu_sesion", "")) { ir("legajo"); return; }
+  D = load("alu_datos", null);
+  if (D) { pintar(); ir("inicio"); }
+  actualizar(!D);
+  window.addEventListener("online", function () { actualizar(false); });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden && navigator.onLine) { actualizar(false); } });
+})();
+</script>
+</body>
+</html>
