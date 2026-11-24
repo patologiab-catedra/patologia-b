@@ -246,6 +246,51 @@ function pintar() {
       '<div class="muted" style="margin-top:6px">Llevás ' + esc(faltas == null ? "-" : faltas) + " de " + esc(perm || "-") + " faltas permitidas en el año</div>" +
       (sit ? '<div class="msg ' + cls + '" style="margin-bottom:0">' + esc(sit) + "</div>" : "")
     : '<div class="muted">Todavía no hay datos de asistencia.</div>';
+  /* Si el servidor manda la asistencia por tipo de clase, se usa esa (incluye el cálculo del %) */
+  var AS = D.asistencia, htmlCalc = "", htmlTipos = "";
+  if (AS && AS.tipos && AS.tipos.length) {
+    var ob = AS.tipos.filter(function (t) { return t.obligatoria; });
+    var juntas = AS.regla === "TODAS JUNTAS" || ob.length <= 1;
+    var base = AS.regla === "TODAS JUNTAS" ? AS.total : ob[0];
+    if (base) {
+      var qq = base.quedan, cl = qq < 0 ? "est-err" : (qq <= 2 ? "est-warn" : "est-ok");
+      htmlF = '<div class="muted">Faltas que te quedan' + (ob.length > 1 && AS.regla !== "TODAS JUNTAS" ? " en " + esc(base.tipo) : "") + '</div>' +
+        '<div class="big">' + esc(Math.max(qq, 0)) + '</div>' +
+        '<div class="muted" style="margin-top:6px">Llevás ' + esc(base.faltas) + " de " + esc(base.permitidas) + " faltas permitidas en el año</div>";
+      if (!juntas) {
+        htmlF += ob.slice(1).map(function (t) { return '<div class="fila"><span>' + esc(t.tipo) + '</span><strong>te quedan ' + esc(Math.max(t.quedan, 0)) + "</strong></div>"; }).join("");
+      }
+      htmlF += '<div class="msg ' + (AS.situacion.indexOf("Super") === 0 ? "est-err" : (AS.situacion.indexOf("límite") >= 0 ? "est-warn" : "est-ok")) + '" style="margin-bottom:0">' + esc(AS.situacion) + "</div>";
+    }
+    /* Detalle por tipo */
+    htmlTipos = AS.tipos.map(function (t) {
+      return '<div class="card"><h3 style="margin-top:0">' + esc(t.tipo) + (t.obligatoria ? "" : ' <span class="chip">no obligatoria</span>') + "</h3>" +
+        '<div class="fila"><span>Clases dadas</span><strong>' + esc(t.clasesDadas) + " de " + esc(t.clasesAnio) + "</strong></div>" +
+        '<div class="fila"><span>Presentes</span><strong>' + esc(t.presentes) + "</strong></div>" +
+        (t.justificadas ? '<div class="fila"><span>Faltas justificadas</span><strong>' + esc(t.justificadas) + "</strong></div>" : "") +
+        '<div class="fila"><span>Faltas</span><strong>' + esc(t.faltas) + "</strong></div>" +
+        (t.obligatoria ? '<div class="fila"><span>Te quedan</span><strong>' + esc(Math.max(t.quedan, 0)) + "</strong></div>" : "") + "</div>";
+    }).join("");
+    /* ¿Cómo se calcula? */
+    var filasC = ob.map(function (t) {
+      if (t.modo === "A mano") {
+        return "<li><b>" + esc(t.tipo) + ":</b> son " + esc(t.clasesAnio) + " clases en el año y la cátedra fija " + esc(t.permitidas) +
+          " faltas permitidas, así que tenés que estar en " + esc(t.minimo) + ".</li>";
+      }
+      return "<li><b>" + esc(t.tipo) + ":</b> son " + esc(t.clasesAnio) + " clases en el año. El " + esc(t.pct) + "% da " +
+        esc(String(Math.round(t.clasesAnio * t.pct) / 100).replace(".", ",")) + ", así que tenés que estar en " + esc(t.minimo) +
+        " y podés faltar a " + esc(t.permitidas) + ".</li>";
+    }).join("");
+    if (AS.regla === "TODAS JUNTAS" && ob.length > 1) {
+      filasC += "<li><b>En total:</b> se suman las " + esc(AS.total.clases) + " clases obligatorias y podés faltar a " + esc(AS.total.permitidas) + " entre todas.</li>";
+    } else if (ob.length > 1) {
+      filasC += "<li>Cada tipo de clase se cuenta por separado: pasarte en uno solo ya alcanza para perder la regularidad.</li>";
+    }
+    var auto = ob.filter(function (t) { return t.modo !== "A mano"; });
+    htmlCalc = '<div class="card"><h3 style="margin-top:0">¿Cómo se calculan tus faltas?</h3>' +
+      (auto.length ? '<p class="muted" style="margin-top:0">Para ser regular tenés que cumplir el ' + esc(auto[0].pct) + '% de las actividades obligatorias. Si la cuenta da con coma, se redondea para arriba la cantidad de clases a las que tenés que ir.</p>' : "") +
+      '<ul style="padding-left:18px;margin:0">' + filasC + "</ul></div>";
+  }
   $("c-faltas").innerHTML = htmlF;
 
   /* último aviso */
@@ -263,7 +308,9 @@ function pintar() {
   }
 
   /* asistencia */
-  if (r) {
+  if (AS && AS.tipos && AS.tipos.length) {
+    $("asis-cont").innerHTML = '<div class="card">' + htmlF + "</div>" + htmlTipos + htmlCalc;
+  } else if (r) {
     var filas = "";
     for (var k in r) {
       if (/legajo|apellido|nombre|comisi|alumno/.test(norm(k))) { continue; }
