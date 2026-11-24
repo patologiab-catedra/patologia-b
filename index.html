@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Asistencia · Patología B</title>
+<style>
+  :root { --ok:#1b8a3a; --mal:#c62828; --warn:#b26a00; --fondo:#101418; --panel:#1a2027; --texto:#f2f4f6; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,sans-serif; background:var(--fondo); color:var(--texto); min-height:100dvh; }
+  header { padding:12px 16px; background:var(--panel); display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  header h1 { font-size:1rem; margin:0; }
+  #estadoRed { font-size:.8rem; opacity:.85; }
+  main { padding:12px 16px 24px; max-width:560px; margin:0 auto; }
+  .panel { background:var(--panel); border-radius:12px; padding:14px; margin-bottom:12px; }
+  label { display:block; font-size:.85rem; margin-bottom:4px; opacity:.85; }
+  input { width:100%; padding:12px; font-size:1rem; border-radius:8px; border:1px solid #39424c; background:#0d1115; color:var(--texto); }
+  button { width:100%; padding:14px; font-size:1rem; border:0; border-radius:10px; background:#2b6cb0; color:#fff; margin-top:8px; }
+  button.sec { background:#39424c; }
+  button.fin { background:var(--mal); }
+  video { width:100%; border-radius:12px; background:#000; aspect-ratio:1/1; object-fit:cover; }
+  #resultado { min-height:92px; border-radius:12px; padding:14px; text-align:center; font-size:1.1rem; background:var(--panel); }
+  #resultado.ok { background:var(--ok); } #resultado.mal { background:var(--mal); } #resultado.warn { background:var(--warn); }
+  #resultado b { display:block; font-size:1.4rem; margin-bottom:4px; }
+  .fila { display:flex; justify-content:space-between; font-size:.9rem; margin-top:8px; }
+  .oculto { display:none; }
+  #resumen li { margin:2px 0; font-size:.9rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Asistencia · Patología B</h1>
+  <span id="estadoRed"></span>
+</header>
+<main>
+
+  <section id="vistaIngreso" class="panel">
+    <label for="token">Tu código personal de ayudante</label>
+    <input id="token" type="password" autocomplete="off" placeholder="Código que te dio la secretaría">
+    <button id="btnIngresar">Entrar</button>
+  </section>
+
+  <section id="vistaEscaner" class="oculto">
+    <div class="panel">
+      <video id="video" playsinline muted></video>
+      <div class="fila"><span id="contador">Presentes: 0</span><span id="pendientes"></span></div>
+      <button id="btnCamara" class="sec">Activar cámara</button>
+    </div>
+    <div id="resultado">Apuntá la cámara al QR del alumno</div>
+    <div class="panel" style="margin-top:12px">
+      <button id="btnTerminar" class="fin">Terminar la clase</button>
+      <button id="btnSalir" class="sec">Salir</button>
+    </div>
+    <div id="vistaResumen" class="panel oculto"></div>
+  </section>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+/* ============ CONFIGURACIÓN ============ */
+// URL de la implementación del Apps Script (termina en /exec). Pegala acá.
+const URL_APPS_SCRIPT = "PEGAR_ACA_LA_URL_DE_APPS_SCRIPT";
+/* ======================================= */
+
+const $ = id => document.getElementById(id);
+const LS = { token:"pb_token", cola:"pb_cola", presentes:"pb_presentes" };
+let stream = null, escaneando = false, ultimoQR = "", ultimoT = 0;
+let presentes = JSON.parse(localStorage.getItem(LS.presentes) || "0");
+
+function token(){ return localStorage.getItem(LS.token) || ""; }
+function cola(){ return JSON.parse(localStorage.getItem(LS.cola) || "[]"); }
+function guardarCola(c){ localStorage.setItem(LS.cola, JSON.stringify(c)); mostrarPendientes(); }
+function mostrarPendientes(){ const n = cola().length; $("pendientes").textContent = n ? n + " sin sincronizar" : "Todo sincronizado"; }
+function mostrarRed(){ $("estadoRed").textContent = navigator.onLine ? "En línea" : "Sin conexión"; }
+
+async function llamar(payload){
+  const r = await fetch(URL_APPS_SCRIPT, {
+    method:"POST",
+    headers:{ "Content-Type":"text/plain;charset=utf-8" },
+    body: JSON.stringify(Object.assign({ token: token() }, payload))
+  });
+  return r.json();
+}
+
+function mostrar(tipo, titulo, detalle){
+  const r = $("resultado");
+  r.className = tipo;
+  r.innerHTML = "<b></b><span></span>";
+  r.querySelector("b").textContent = titulo;
+  r.querySelector("span").textContent = detalle || "";
+  if (navigator.vibrate) navigator.vibrate(tipo === "ok" ? 80 : [120,60,120]);
+}
+
+async function registrar(qr){
+  const registro = { accion:"registrar", qr, ts: new Date().toISOString() };
+  try {
+    if (!navigator.onLine) throw new Error("offline");
+    const rta = await llamar(registro);
+    if (rta.estado === "presente") { presentes++; localStorage.setItem(LS.presentes, presentes); $("contador").textContent = "Presentes: " + presentes; mostrar("ok", rta.nombre || "Presente", rta.legajo ? "Legajo " + rta.legajo : ""); }
+    else if (rta.estado === "duplicado") mostrar("warn", "Ya estaba registrado", rta.nombre || "");
+    else mostrar("mal", "QR no válido", rta.msg || "");
+  } catch (e) {
+    // Sin señal: queda en el celular y se manda después. La verificación de la firma la hace el servidor al sincronizar.
+    const c = cola(); c.push(registro); guardarCola(c);
+    mostrar("warn", "Guardado sin conexión", "Se valida y envía cuando haya señal");
+  }
+}
+
+async function sincronizar(){
+  const c = cola();
+  if (!c.length || !navigator.onLine || !token()) return;
+  const resto = [];
+  for (const reg of c) {
+    try { await llamar(reg); } catch (e) { resto.push(reg); }
+  }
+  guardarCola(resto);
+}
+
+/* ---- cámara en vivo ---- */
+async function activarCamara(){
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:"environment" } }, audio:false });
+    $("video").srcObject = stream;
+    await $("video").play();
+    $("btnCamara").classList.add("oculto");
+    escaneando = true;
+    requestAnimationFrame(ciclo);
+  } catch (e) {
+    mostrar("mal", "No se pudo abrir la cámara", "Revisá el permiso de cámara del navegador");
+  }
+}
+
+const canvas = document.createElement("canvas");
+const ctx = canvas.getContext("2d", { willReadFrequently:true });
+let detector = ("BarcodeDetector" in window) ? new BarcodeDetector({ formats:["qr_code"] }) : null;
+
+async function ciclo(){
+  if (!escaneando) return;
+  const v = $("video");
+  if (v.readyState >= 2) {
+    let texto = "";
+    try {
+      if (detector) {
+        const r = await detector.detect(v);
+        if (r.length) texto = r[0].rawValue;
+      } else {
+        canvas.width = v.videoWidth; canvas.height = v.videoHeight;
+        ctx.drawImage(v, 0, 0);
+        const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const q = jsQR(img.data, img.width, img.height);
+        if (q) texto = q.data;
+      }
+    } catch (e) {}
+    const ahora = Date.now();
+    if (texto && (texto !== ultimoQR || ahora - ultimoT > 4000)) {
+      ultimoQR = texto; ultimoT = ahora;
+      await registrar(texto);
+    }
+  }
+  setTimeout(() => requestAnimationFrame(ciclo), 150);
+}
+
+function apagarCamara(){
+  escaneando = false;
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = null; $("btnCamara").classList.remove("oculto");
+}
+
+/* ---- cierre de clase ---- */
+async function terminarClase(){
+  if (!confirm("¿Terminar la clase? Se manda el resumen a la secretaría.")) return;
+  await sincronizar();
+  if (cola().length) { mostrar("warn", "Quedan registros sin enviar", "Conectate a internet y probá de nuevo"); return; }
+  try {
+    const rta = await llamar({ accion:"terminar", ts:new Date().toISOString() });
+    const caja = $("vistaResumen"); caja.classList.remove("oculto"); caja.innerHTML = "";
+    const h = document.createElement("div");
+    h.textContent = "Presentes: " + (rta.presentes ? rta.presentes.length : 0) + " · Ausentes: " + (rta.ausentes ? rta.ausentes.length : 0);
+    h.style.fontWeight = "600"; caja.appendChild(h);
+    const ul = document.createElement("ul");
+    (rta.ausentes || []).forEach(n => { const li = document.createElement("li"); li.textContent = "Ausente: " + n; ul.appendChild(li); });
+    caja.appendChild(ul);
+    presentes = 0; localStorage.setItem(LS.presentes, "0"); $("contador").textContent = "Presentes: 0";
+    apagarCamara();
+  } catch (e) {
+    mostrar("mal", "No se pudo cerrar la clase", "Probá de nuevo con señal");
+  }
+}
+
+/* ---- ingreso ---- */
+function entrar(){
+  const t = $("token").value.trim() || token();
+  if (!t) return;
+  localStorage.setItem(LS.token, t);
+  $("vistaIngreso").classList.add("oculto");
+  $("vistaEscaner").classList.remove("oculto");
+  $("contador").textContent = "Presentes: " + presentes;
+  mostrarPendientes(); sincronizar();
+}
+
+$("btnIngresar").onclick = entrar;
+$("btnCamara").onclick = activarCamara;
+$("btnTerminar").onclick = terminarClase;
+$("btnSalir").onclick = () => { apagarCamara(); localStorage.removeItem(LS.token); location.reload(); };
+window.addEventListener("online", () => { mostrarRed(); sincronizar(); });
+window.addEventListener("offline", mostrarRed);
+mostrarRed();
+if (token()) entrar();
+</script>
+</body>
+</html>
