@@ -127,9 +127,32 @@ function aluPedirCodigo_(legajo) {
     body: 'Hola, ' + a.nombre + ':\n\n' +
       'Tu código para entrar a la app de la Cátedra B de Patología es: ' + codigo + '\n\n' +
       'Vence en ' + ALU_CODIGO_MIN + ' minutos. Si no lo pediste vos, ignorá este mail.\n\n' +
-      'Cátedra B de Patología · FCM-UNLP'
+      'Cátedra B de Patología · FCM-UNLP',
+    htmlBody: aluMailHtml_(a.nombre, codigo)
   });
   return { ok: true, mail: aluMascara_(a.mail) };
+}
+
+// Mail con el código grande y fácil de copiar
+function aluMailHtml_(nombre, codigo) {
+  var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  return '' +
+    '<div style="background:#f4f5f7;padding:24px 12px;font-family:Arial,Helvetica,sans-serif;color:#1b1b1b">' +
+    '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:480px;margin:0 auto;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid #e3e5ea">' +
+    '<tr><td style="background:#16325c;color:#ffffff;padding:18px 24px">' +
+    '<div style="font-size:17px;font-weight:bold">Cátedra B de Patología</div>' +
+    '<div style="font-size:13px;opacity:.8">FCM · UNLP</div></td></tr>' +
+    '<tr><td style="padding:28px 24px 8px">' +
+    '<p style="margin:0 0 6px;font-size:16px">Hola, ' + esc(nombre) + ':</p>' +
+    '<p style="margin:0 0 22px;font-size:15px;color:#5b6270">Este es tu código para entrar a la app de la cátedra.</p>' +
+    '<div style="background:#eef2fb;border:2px solid #1a56db;border-radius:14px;padding:20px 10px;text-align:center">' +
+    '<div style="font-family:\'Courier New\',Courier,monospace;font-size:42px;font-weight:bold;letter-spacing:10px;color:#16325c">' + codigo + '</div>' +
+    '</div>' +
+    '<p style="margin:18px 0 0;font-size:14px;color:#5b6270;text-align:center">Vence en <b>' + ALU_CODIGO_MIN + ' minutos</b>. Escribilo en la app tal cual aparece.</p>' +
+    '</td></tr>' +
+    '<tr><td style="padding:20px 24px 24px">' +
+    '<p style="margin:0;font-size:13px;color:#8a909c;border-top:1px solid #e3e5ea;padding-top:14px">Si no lo pediste vos, ignorá este mail: nadie puede entrar sin este código.</p>' +
+    '</td></tr></table></div>';
 }
 
 // ---------- 2. Validar código y abrir sesión ----------
