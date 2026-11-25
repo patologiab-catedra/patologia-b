@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1a56db">
+<title>Carga de notas</title>
+<style>
+body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f5f6f8;color:#1b1b1b}
+.w{max-width:520px;margin:0 auto;padding:16px}
+h1{font-size:22px}
+.b{display:block;box-sizing:border-box;width:100%;text-align:center;background:#1a56db;color:#fff;border:0;border-radius:10px;padding:14px;margin:10px 0;font-size:16px;text-decoration:none;cursor:pointer}
+.b:disabled{opacity:.6}
+.b.sec{background:#fff;color:#1a56db;border:2px solid #1a56db}
+.b.gris{background:#64748b}
+.res{border-radius:10px;padding:16px;margin:10px 0;background:#e5e7eb;font-size:18px;text-align:center}
+.ok{background:#c9f2d3}.err{background:#fbd0d0}.warn{background:#fdeeba}
+select{font-size:16px;padding:10px;margin:8px 0;width:100%;box-sizing:border-box}
+#login label,#pform label{display:block;margin:0 0 14px;font-weight:600}
+#login input,#pform input,#pform select{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:12px;font-size:16px;border:1px solid #cbd5e1;border-radius:8px;font-weight:400}
+#pform{border-top:1px solid #e2e8f0;padding-top:14px;margin-top:10px}
+.fila{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:10px;padding:8px 12px;margin:6px 0}
+.fila span{flex:1}
+.fila input{width:80px;font-size:18px;padding:8px;text-align:center;border:2px solid #cbd5e1;border-radius:8px}
+.fila input.ok{border-color:#16a34a;background:#e8f8ee}
+.fila input.err{border-color:#dc2626;background:#fdeaea}
+.fila input.env{border-color:#d97706;background:#fff7e6}
+.tabs{display:flex;gap:8px;margin:8px 0}
+.tabs button{flex:1;padding:10px;font-size:15px;border:2px solid #1a56db;background:#fff;color:#1a56db;border-radius:10px;cursor:pointer}
+.tabs button.on{background:#1a56db;color:#fff}
+.tabs.fec button{font-size:14px;padding:8px;border-color:#64748b;color:#334155}
+.tabs.fec button.on{background:#334155;color:#fff}
+#volver{display:none;background:none;border:0;color:#1a56db;font-size:16px;padding:6px 0;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="w">
+  <button id="volver">← Volver</button>
+  <h1 id="tit">Carga de notas</h1>
+  <div id="est" class="res">Cargando...</div>
+
+  <div id="login" style="display:none">
+    <label>Código personal <input id="cod" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase"></label>
+    <button class="b" id="entrar">Entrar</button>
+    <p style="margin:10px 0 0"><a href="#" id="nocod" style="color:#1a56db">¿No tenés código o lo perdiste?</a></p>
+    <div id="pform" style="display:none">
+      <label>Nombre y apellido <input id="pnom" maxlength="80"></label>
+      <label>Comisión <select id="pcom"><option value="">Elegí tu comisión</option></select></label>
+      <label>Mail o celular para pasarte el código <input id="pcon" maxlength="80"></label>
+      <button class="b" id="penv">Pedir código</button>
+    </div>
+  </div>
+
+  <div id="sel" style="display:none">
+    <label>Comisión <select id="com"></select></label>
+    <button class="b" id="ver">Ver alumnos</button>
+    <button class="b gris" id="salir">Cambiar de usuario</button>
+  </div>
+
+  <div id="pan" style="display:none">
+    <div class="tabs" id="tabs"></div>
+    <div class="tabs fec" id="fecs"></div>
+    <div id="aviso" class="res" style="display:none"></div>
+    <div id="filas"></div>
+    <button class="b" id="conf">Confirmar</button>
+    <button class="b gris" id="corr" style="display:none">Corregir notas</button>
+    <button class="b sec" id="desc">Descargar lista (planilla)</button>
+    <button class="b sec" id="dpdf">Descargar lista (PDF)</button>
+  </div>
+</div>
+
+<script src="../config.js"></script>
+<script src="../catedra.js"></script>
+<script>
+/* La dirección del Apps Script está en config.js. El código del docente es el mismo del escáner. */
+var COD = "", COM = null, PAR = 1, FEC = 1, FILAS = [], CONF = {};
+function $(i) { return document.getElementById(i); }
+function et(p, f) { return "P" + p + " F" + f; }
+function idx() { return (PAR - 1) * 4 + (FEC - 1); }
+function txtConf() { return "Confirmar parcial " + PAR + ", fecha " + FEC; }
+function est(t, c) { $("est").textContent = t; $("est").className = "res " + (c || ""); }
+function aviso(t, c) { var a = $("aviso"); a.style.display = "block"; a.textContent = t; a.className = "res " + (c || ""); }
+function ver(id) {
+  ["login", "sel", "pan"].forEach(function (x) { $(x).style.display = x === id ? "block" : "none"; });
+  $("volver").style.display = id === "pan" ? "inline-block" : "none";
+}
+function guardarCod(c) { try { if (c) { localStorage.setItem("pb_token", c); } else { localStorage.removeItem("pb_token"); } } catch (e) {} }
+
+/* ---- comunicación con Apps Script ---- */
+function api(accion, datos) {
+  var body = JSON.stringify(Object.assign({ accion: accion, cod: COD }, datos || {}));
+  return fetch(URL_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: body })
+    .catch(function () { throw new Error("Sin conexión. Revisá la señal y probá de nuevo."); })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { if (j && j.error) { throw new Error(j.error); } return j; });
+}
+
+/* ---- ingreso con código personal ---- */
+function pedirCodigo(t, c) { est(t || "Escribí tu código personal de docente.", c); ver("login"); }
+function entrar(c) {
+  c = String(c || "").trim().toUpperCase();
+  if (!c) { pedirCodigo("Escribí el código."); return; }
+  est("Verificando el código...", "warn"); $("entrar").disabled = true; COD = c;
+  api("n_estado").then(function (e) {
+    $("entrar").disabled = false; guardarCod(c);
+    if (!e.comisiones.length) { est(e.nombre + ": todavía no tenés comisiones asignadas. Avisale a la secretaría."); ver("sel"); $("ver").style.display = "none"; return; }
+    $("ver").style.display = "block";
+    est("Hola, " + e.nombre);
+    $("com").innerHTML = "";
+    e.comisiones.forEach(function (n) { var o = document.createElement("option"); o.value = n; o.textContent = "Comisión " + n; $("com").appendChild(o); });
+    ver("sel");
+  }).catch(function (er) {
+    $("entrar").disabled = false;
+    if (er.message.indexOf("Sin conexión") < 0) { COD = ""; guardarCod(""); }
+    pedirCodigo(er.message, "err");
+  });
+}
+$("entrar").onclick = function () { entrar($("cod").value); };
+$("cod").onkeydown = function (ev) { if (ev.key === "Enter") { entrar($("cod").value); } };
+$("salir").onclick = function () { COD = ""; guardarCod(""); $("cod").value = ""; pedirCodigo(); };
+
+/* ---- pedido de código ---- */
+$("nocod").onclick = function (ev) {
+  ev.preventDefault();
+  var abrir = $("pform").style.display === "none";
+  $("pform").style.display = abrir ? "block" : "none";
+  if (abrir && $("pcom").options.length < 2) {
+    api("n_comisiones").then(function (r) {
+      r.comisiones.forEach(function (n) { var o = document.createElement("option"); o.value = n; o.textContent = "Comisión " + n; $("pcom").appendChild(o); });
+    }).catch(function (er) { est(er.message, "err"); });
+  }
+};
+$("penv").onclick = function () {
+  $("penv").disabled = true; est("Enviando el pedido...", "warn");
+  api("n_pedir", { nombre: $("pnom").value, com: $("pcom").value, contacto: $("pcon").value }).then(function () {
+    $("penv").disabled = false; $("pform").style.display = "none";
+    $("pnom").value = ""; $("pcom").value = ""; $("pcon").value = "";
+    est("Listo, la secretaría recibió tu pedido y te va a pasar el código.");
+  }).catch(function (er) { $("penv").disabled = false; est(er.message, "err"); });
+};
+
+/* ---- notas de la comisión ---- */
+$("ver").onclick = function () { COM = $("com").value; cargar(); };
+$("volver").onclick = function () { est("Elegí la comisión"); ver("sel"); };
+function cargar() {
+  $("ver").disabled = true; est("Cargando alumnos de la comisión " + COM + "...", "warn");
+  api("n_notas", { com: COM }).then(function (r) {
+    $("ver").disabled = false;
+    est("Comisión " + COM + " - " + r.filas.length + " alumnos");
+    FILAS = r.filas; CONF = r.conf; ver("pan"); pintar();
+  }).catch(function (er) { $("ver").disabled = false; est(er.message, "err"); });
+}
+function boton(cont, txt, on, fn) { var b = document.createElement("button"); b.textContent = txt; b.className = on ? "on" : ""; b.onclick = fn; cont.appendChild(b); }
+function pintar() {
+  var t = $("tabs"); t.innerHTML = "";
+  [1, 2, 3].forEach(function (n) { boton(t, "Parcial " + n, n === PAR, function () { PAR = n; pintar(); }); });
+  var fs = $("fecs"); fs.innerHTML = "";
+  [1, 2, 3, 4].forEach(function (n) { boton(fs, "Fecha " + n + (CONF[et(PAR, n)] ? " ✓" : ""), n === FEC, function () { FEC = n; pintar(); }); });
+  var bloq = !!CONF[et(PAR, FEC)];
+  $("aviso").style.display = "none";
+  if (bloq) { aviso("Parcial " + PAR + ", fecha " + FEC + ": confirmada el " + CONF[et(PAR, FEC)] + ". Para cambiar una nota, tocá Corregir notas.", "warn"); }
+  $("corr").style.display = bloq ? "block" : "none";
+  $("conf").style.display = bloq ? "none" : "block"; $("conf").textContent = txtConf();
+  var cont = $("filas"); cont.innerHTML = "";
+  FILAS.forEach(function (f) {
+    var d = document.createElement("div"); d.className = "fila";
+    var s = document.createElement("span"); s.textContent = f.n; d.appendChild(s);
+    var i = document.createElement("input"); i.type = "text"; i.setAttribute("inputmode", "decimal");
+    i.value = f.p[idx()] || ""; i.disabled = bloq;
+    i.onchange = function () {
+      var par = PAR, fec = FEC, k = idx(); i.className = "env";
+      api("n_guardar", { com: COM, l: f.l, parcial: par, fecha: fec, valor: i.value }).then(function (r) {
+        i.className = "ok"; f.p[k] = String(r.valor); $("aviso").style.display = "none";
+      }).catch(function (er) { i.className = "err"; aviso(er.message, "err"); });
+    };
+    d.appendChild(i); cont.appendChild(d);
+  });
+}
+$("corr").onclick = function () {
+  var p = PAR, f = FEC;
+  api("n_reabrir", { com: COM, parcial: p, fecha: f }).then(function () {
+    delete CONF[et(p, f)]; pintar(); aviso("Notas habilitadas para corregir. Cuando termines, confirmá de nuevo.", "warn");
+  }).catch(function (er) { aviso(er.message, "err"); });
+};
+var pend = false;
+$("conf").onclick = function () {
+  if (!pend) { pend = true; $("conf").textContent = "Tocá otra vez para confirmar"; setTimeout(function () { pend = false; $("conf").textContent = txtConf(); }, 5000); return; }
+  pend = false;
+  var p = PAR, f = FEC;
+  api("n_confirmar", { com: COM, parcial: p, fecha: f }).then(function (r) { CONF[et(p, f)] = r.cuando; pintar(); })
+    .catch(function (er) { aviso(er.message, "err"); });
+};
+
+/* ---- descargas ---- */
+function bajar(blob, nombre) { var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); }
+$("desc").onclick = function () {
+  var cab = ["Legajo", "Alumno"]; [1, 2, 3].forEach(function (p) { [1, 2, 3, 4].forEach(function (f) { cab.push(et(p, f)); }); });
+  var filas = [cab].concat(FILAS.map(function (f) { return [f.l, f.n].concat(f.p.map(function (x) { return x || ""; })); }));
+  var csv = filas.map(function (r) { return r.map(function (x) { x = String(x); return /[",;\n]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; }).join(","); }).join("\r\n");
+  bajar(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }), "Notas comision " + COM + ".csv");
+};
+$("dpdf").onclick = function () {
+  var b = $("dpdf"); b.disabled = true; b.textContent = "Armando el PDF...";
+  api("n_pdf", { com: COM }).then(function (r) {
+    b.disabled = false; b.textContent = "Descargar lista (PDF)";
+    var bin = atob(r.pdf), u = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) { u[i] = bin.charCodeAt(i); }
+    bajar(new Blob([u], { type: "application/pdf" }), "Notas comision " + COM + ".pdf");
+  }).catch(function (er) { b.disabled = false; b.textContent = "Descargar lista (PDF)"; aviso(er.message, "err"); });
+};
+
+/* ---- arranque ---- */
+cargarCatedra(function (c) { var t = "Notas · " + (c.CATEDRA_CORTO || c.CATEDRA_NOMBRE); document.title = t; $("tit").textContent = t; });
+try { COD = localStorage.getItem("pb_token") || ""; } catch (e) {}
+if (COD) { entrar(COD); } else { pedirCodigo(); }
+</script>
+</body>
+</html>

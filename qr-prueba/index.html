@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR de prueba</title>
+<style>
+body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f5f6f8;color:#1b1b1b}
+.w{max-width:900px;margin:0 auto;padding:16px}
+h1{font-size:22px}
+.b{display:block;box-sizing:border-box;width:100%;max-width:520px;text-align:center;background:#1a56db;color:#fff;border:0;border-radius:10px;padding:14px;margin:10px 0;font-size:16px;cursor:pointer}
+.res{border-radius:10px;padding:16px;margin:10px 0;background:#e5e7eb;font-size:18px;text-align:center;max-width:520px;box-sizing:border-box}
+.err{background:#fbd0d0}.warn{background:#fdeeba}
+input{display:block;width:100%;max-width:520px;box-sizing:border-box;margin-top:6px;padding:12px;font-size:16px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase}
+.card{display:inline-block;background:#fff;border-radius:10px;padding:10px;margin:8px;text-align:center;vertical-align:top;width:200px}
+.card svg{width:180px;height:180px}
+</style>
+</head>
+<body>
+<div class="w">
+  <h1>QR de los alumnos de prueba</h1>
+  <div id="est" class="res">Cargando...</div>
+  <div id="login" style="display:none">
+    <label>Código personal de docente <input id="cod" autocomplete="off" spellcheck="false"></label>
+    <button class="b" id="entrar">Ver los QR</button>
+  </div>
+  <div id="g"></div>
+</div>
+<script src="../config.js"></script>
+<script src="../alumno/qrcode.js"></script>
+<script>
+/* Muestra los QR de las comisiones del docente, con el mismo código del escáner y de la carga de notas. */
+var COD = "";
+function $(i) { return document.getElementById(i); }
+function est(t, c) { $("est").textContent = t; $("est").className = "res " + (c || ""); }
+function cargar() {
+  est("Cargando...", "warn"); $("entrar").disabled = true;
+  fetch(URL_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ accion: "n_qrs", cod: COD }) })
+    .then(function (r) { return r.json(); })
+    .then(function (j) {
+      $("entrar").disabled = false;
+      if (j.error) { throw new Error(j.error); }
+      try { localStorage.setItem("pb_token", COD); } catch (e) {}
+      $("login").style.display = "none";
+      est("Cada alumno tiene un código distinto y firmado. Son " + j.qrs.length + " alumnos.");
+      $("g").innerHTML = "";
+      j.qrs.forEach(function (a) {
+        var d = document.createElement("div"); d.className = "card";
+        var q = qrcode(0, "M"); q.addData(a.c); q.make();
+        d.innerHTML = q.createSvgTag({ cellSize: 4, margin: 2 });
+        var p = document.createElement("p"); var b = document.createElement("b"); b.textContent = a.n;
+        p.appendChild(b); p.appendChild(document.createElement("br"));
+        p.appendChild(document.createTextNode("Legajo " + a.l + " - Com. " + a.k));
+        d.appendChild(p); $("g").appendChild(d);
+      });
+    })
+    .catch(function (er) { $("entrar").disabled = false; $("login").style.display = "block"; est(er.message || "Sin conexión", "err"); });
+}
+$("entrar").onclick = function () { COD = $("cod").value.trim().toUpperCase(); if (COD) { cargar(); } };
+try { COD = localStorage.getItem("pb_token") || ""; } catch (e) {}
+if (COD) { cargar(); } else { est("Escribí tu código personal de docente."); $("login").style.display = "block"; }
+</script>
+</body>
+</html>

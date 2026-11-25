@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Pedido de código de docente</title>
+<style>
+body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f5f6f8;color:#1b1b1b}
+.w{max-width:520px;margin:0 auto;padding:16px}
+h1{font-size:22px}
+.b{display:block;box-sizing:border-box;width:100%;text-align:center;color:#fff;border:0;border-radius:10px;padding:14px;margin:10px 0;font-size:16px;cursor:pointer}
+.b:disabled{opacity:.6}
+.res{border-radius:10px;padding:16px;margin:10px 0;background:#e5e7eb;font-size:18px;text-align:center}
+.ok{background:#c9f2d3}.err{background:#fbd0d0}.warn{background:#fdeeba}
+</style>
+</head>
+<body>
+<div class="w">
+  <h1>Pedido de código de docente</h1>
+  <div id="est" class="res">Cargando el pedido...</div>
+  <button class="b" id="go" style="display:none"></button>
+  <div id="out"></div>
+</div>
+<script src="../config.js"></script>
+<script>
+/* Abre desde los botones Aprobar / Rechazar del mail. Pide confirmar, así un revisor de links del correo no lo resuelve solo. */
+function $(i) { return document.getElementById(i); }
+var q = new URLSearchParams(location.search);
+var P = { id: q.get("id") || "", a: q.get("a") === "no" ? "no" : "ok", f: q.get("f") || "" };
+function api(accion) {
+  return fetch(URL_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(Object.assign({ accion: accion }, P)) })
+    .catch(function () { throw new Error("Sin conexión. Revisá la señal y recargá la página."); })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { if (j && j.error) { throw new Error(j.error); } return j; });
+}
+function est(t, c) { $("est").textContent = t; $("est").className = "res " + (c || ""); }
+api("ped_ver").then(function (p) {
+  if (!p.pendiente) { est("Este pedido ya estaba resuelto: " + p.estado + ".", "warn"); return; }
+  var e = $("est"); e.className = "res"; e.textContent = "";
+  [p.nombre, "Comisión " + p.com, p.contacto].forEach(function (t, k) { if (k) { e.appendChild(document.createElement("br")); } e.appendChild(document.createTextNode(t)); });
+  var b = $("go"); b.style.display = "block";
+  b.style.background = P.a === "ok" ? "#16a34a" : "#b91c1c";
+  b.textContent = P.a === "ok" ? "Aprobar y mandar el código" : "Rechazar el pedido";
+  b.onclick = function () {
+    b.disabled = true; b.textContent = "Procesando...";
+    api("ped_resolver").then(function (r) { b.style.display = "none"; $("out").innerHTML = r.html; })
+      .catch(function (er) { b.disabled = false; b.textContent = "Reintentar"; $("out").innerHTML = ""; var d = document.createElement("div"); d.className = "res err"; d.textContent = er.message; $("out").appendChild(d); });
+  };
+}).catch(function (er) { est(er.message, "err"); });
+</script>
+</body>
+</html>
