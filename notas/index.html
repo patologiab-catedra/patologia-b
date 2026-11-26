@@ -30,12 +30,16 @@ select{font-size:16px;padding:10px;margin:8px 0;width:100%;box-sizing:border-box
 .tabs button.on{background:#1a56db;color:#fff}
 .tabs.fec button{font-size:14px;padding:8px;border-color:#64748b;color:#334155}
 .tabs.fec button.on{background:#334155;color:#fff}
+.dnav{display:flex;gap:8px;margin:0 0 8px}
+.dnav a{flex:1;text-align:center;padding:10px;border-radius:10px;border:2px solid #1a56db;color:#1a56db;background:#fff;text-decoration:none;font-size:15px}
+.dnav a.on{background:#1a56db;color:#fff}
 #volver{display:none;background:none;border:0;color:#1a56db;font-size:16px;padding:6px 0;cursor:pointer}
 </style>
 </head>
 <body>
 <div class="w">
-  <button id="volver">← Volver</button>
+  <nav class="dnav"><a href="../">⌂ Asistencia</a><a href="./" class="on">✎ Notas</a></nav>
+  <button id="volver">← Volver a comisiones</button>
   <h1 id="tit">Carga de notas</h1>
   <div id="est" class="res">Cargando...</div>
 
@@ -84,7 +88,9 @@ function ver(id) {
   ["login", "sel", "pan"].forEach(function (x) { $(x).style.display = x === id ? "block" : "none"; });
   $("volver").style.display = id === "pan" ? "inline-block" : "none";
 }
-function guardarCod(c) { try { if (c) { localStorage.setItem("pb_token", c); } else { localStorage.removeItem("pb_token"); } } catch (e) {} }
+/* El código se guarda igual que en Asistencia (JSON), para no pedirlo de nuevo al pasar de una página a otra. */
+function guardarCod(c) { try { if (c) { localStorage.setItem("pb_token", JSON.stringify(c)); } else { localStorage.removeItem("pb_token"); } } catch (e) {} }
+function leerCod() { try { var s = localStorage.getItem("pb_token") || ""; try { s = JSON.parse(s); } catch (e) {} return String(s || ""); } catch (e) { return ""; } }
 
 /* ---- comunicación con Apps Script ---- */
 function api(accion, datos) {
@@ -211,7 +217,7 @@ $("dpdf").onclick = function () {
 
 /* ---- arranque ---- */
 cargarCatedra(function (c) { var t = "Notas · " + (c.CATEDRA_CORTO || c.CATEDRA_NOMBRE); document.title = t; $("tit").textContent = t; });
-try { COD = localStorage.getItem("pb_token") || ""; } catch (e) {}
+COD = leerCod();
 if (COD) { entrar(COD); } else { pedirCodigo(); }
 </script>
 </body>

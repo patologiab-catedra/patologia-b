@@ -13,10 +13,14 @@ h1{font-size:22px}
 .ok{background:#c9f2d3}.err{background:#fbd0d0}.warn{background:#fdeeba}
 select,input[type=password]{font-size:16px;padding:10px;margin:8px 0;width:100%;box-sizing:border-box}
 li{padding:4px 0}
+.dnav{display:flex;gap:8px;margin:0 0 8px}
+.dnav a{flex:1;text-align:center;padding:10px;border-radius:10px;border:2px solid #1a56db;color:#1a56db;background:#fff;text-decoration:none;font-size:15px}
+.dnav a.on{background:#1a56db;color:#fff}
 </style>
 </head>
 <body>
 <div class="w">
+  <nav class="dnav" id="dnav"><a href="./" class="on">⌂ Asistencia</a><a href="notas/">✎ Notas</a></nav>
   <button id="volver" style="display:none;background:none;border:0;color:#1a56db;font-size:16px;padding:6px 0;cursor:pointer">← Volver</button>
   <h1 id="tit">Asistencia</h1>
   <div id="est" class="res">Cargando...</div>
@@ -75,6 +79,8 @@ function ver(id) {
   VISTA = id;
   ["login", "sel", "esc", "resumen"].forEach(function (x) { $(x).style.display = x === id ? "block" : "none"; });
   $("volver").style.display = (id === "esc" || id === "resumen") ? "inline-block" : "none";
+  /* Durante la clase se oculta, para no salir sin querer con asistencias sin enviar */
+  $("dnav").style.display = (id === "esc" || id === "resumen") ? "none" : "flex";
 }
 function cnt() { $("cnt").textContent = Object.keys(visto).length + " de " + total + " presentes"; }
 function estado() {
@@ -99,6 +105,8 @@ function api(accion, datos) {
 /* ---- ingreso ---- */
 function arrancar() {
   TOKEN = load("pb_token", "");
+  /* Si Notas lo guardó como texto suelto (versión vieja), se lee igual */
+  if (!TOKEN) { try { TOKEN = localStorage.getItem("pb_token") || ""; } catch (e) {} }
   if (!TOKEN) { $("est").textContent = "Ingresá con tu código de ayudante"; ver("login"); return; }
   $("est").textContent = "Cargando...";
   api("estado").then(function (e) {

@@ -14,10 +14,13 @@ h1{font-size:22px}
 input{display:block;width:100%;max-width:520px;box-sizing:border-box;margin-top:6px;padding:12px;font-size:16px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase}
 .card{display:inline-block;background:#fff;border-radius:10px;padding:10px;margin:8px;text-align:center;vertical-align:top;width:200px}
 .card svg{width:180px;height:180px}
+.dnav{display:flex;gap:8px;margin:0 0 8px;max-width:520px}
+.dnav a{flex:1;text-align:center;padding:10px;border-radius:10px;border:2px solid #1a56db;color:#1a56db;background:#fff;text-decoration:none;font-size:15px}
 </style>
 </head>
 <body>
 <div class="w">
+  <nav class="dnav"><a href="../">⌂ Asistencia</a><a href="../notas/">✎ Notas</a></nav>
   <h1>QR de los alumnos de prueba</h1>
   <div id="est" class="res">Cargando...</div>
   <div id="login" style="display:none">
@@ -40,7 +43,7 @@ function cargar() {
     .then(function (j) {
       $("entrar").disabled = false;
       if (j.error) { throw new Error(j.error); }
-      try { localStorage.setItem("pb_token", COD); } catch (e) {}
+      try { localStorage.setItem("pb_token", JSON.stringify(COD)); } catch (e) {}
       $("login").style.display = "none";
       est("Cada alumno tiene un código distinto y firmado. Son " + j.qrs.length + " alumnos.");
       $("g").innerHTML = "";
@@ -57,7 +60,7 @@ function cargar() {
     .catch(function (er) { $("entrar").disabled = false; $("login").style.display = "block"; est(er.message || "Sin conexión", "err"); });
 }
 $("entrar").onclick = function () { COD = $("cod").value.trim().toUpperCase(); if (COD) { cargar(); } };
-try { COD = localStorage.getItem("pb_token") || ""; } catch (e) {}
+try { COD = localStorage.getItem("pb_token") || ""; try { COD = String(JSON.parse(COD) || ""); } catch (e) {} } catch (e) {}
 if (COD) { cargar(); } else { est("Escribí tu código personal de docente."); $("login").style.display = "block"; }
 </script>
 </body>
