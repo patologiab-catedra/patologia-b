@@ -16,6 +16,9 @@ function notasApi_(d) {
     if (a === 'n_reabrir') { reabrirParcial(d.cod, d.com, d.parcial, d.fecha); return { ok: true }; }
     if (a === 'n_pdf') { return { pdf: pdfNotas(d.cod, d.com) }; }
 
+    // ---- Avisos para la app del alumno (avisos.gs) ----
+    if (a.indexOf('n_av_') === 0) { return avisosApi_(d); }
+
     // ---- Pedido de código (sin código) ----
     if (a === 'n_comisiones') { return { comisiones: comisionesPublicas() }; }
     if (a === 'n_pedir') { pedirCodigoDocente(d.nombre, d.com, d.contacto); return { ok: true }; }
