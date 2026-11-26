@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#1a56db">
+<meta name="robots" content="noindex">
+<title>Avisos</title>
+<style>
+body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f5f6f8;color:#1b1b1b}
+.w{max-width:520px;margin:0 auto;padding:16px}
+h1{font-size:22px}
+h2{font-size:18px;margin:22px 0 6px}
+.b{display:block;box-sizing:border-box;width:100%;text-align:center;background:#1a56db;color:#fff;border:0;border-radius:10px;padding:14px;margin:10px 0;font-size:16px;cursor:pointer}
+.b:disabled{opacity:.6}
+.b.gris{background:#64748b}
+.res{border-radius:10px;padding:16px;margin:10px 0;background:#e5e7eb;font-size:18px;text-align:center}
+.ok{background:#c9f2d3}.err{background:#fbd0d0}.warn{background:#fdeeba}
+label{display:block;margin:0 0 14px;font-weight:600}
+input,select,textarea{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:12px;font-size:16px;border:1px solid #cbd5e1;border-radius:8px;font-weight:400;font-family:inherit;background:#fff}
+textarea{min-height:140px;resize:vertical}
+.para{background:#fff;border-radius:8px;padding:12px;border:1px solid #cbd5e1;font-weight:400;margin-top:6px}
+.cont{font-weight:400;color:#64748b;font-size:13px;text-align:right;margin-top:4px}
+.card{background:#fff;border-radius:10px;padding:12px;margin:8px 0}
+.card.ret{opacity:.55}
+.chip{display:inline-block;background:#e0e7ff;color:#1a56db;border-radius:99px;padding:2px 10px;font-size:13px;margin-right:6px}
+.muted{color:#64748b;font-size:14px}
+.ret-b{background:none;border:1px solid #b91c1c;color:#b91c1c;border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer;margin-top:8px}
+.dnav{display:flex;gap:8px;margin:0 0 8px}
+.dnav a{flex:1;text-align:center;padding:10px 4px;border-radius:10px;border:2px solid #1a56db;color:#1a56db;background:#fff;text-decoration:none;font-size:15px}
+.dnav a.on{background:#1a56db;color:#fff}
+.oculto{display:none}
+</style>
+</head>
+<body>
+<div class="w">
+  <nav class="dnav"><a href="../">⌂ Asistencia</a><a href="../notas/">✎ Notas</a><a href="./" class="on">📢 Avisos</a></nav>
+  <h1 id="tit">Avisos para los alumnos</h1>
+  <div id="est" class="res">Cargando...</div>
+
+  <div id="login" class="oculto">
+    <label>Código personal <input id="cod" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase"></label>
+    <p class="muted" style="margin-top:-6px">Docentes: el mismo código de Notas y Asistencia. Secretaría: la clave de secretaría.</p>
+    <button class="b" id="entrar">Entrar</button>
+  </div>
+
+  <div id="pan" class="oculto">
+    <h2>Nuevo aviso</h2>
+    <label>Para
+      <div class="para oculto" id="paraTodas">Todas las comisiones</div>
+      <select id="com" class="oculto"></select>
+    </label>
+    <label>Título (opcional) <input id="titulo" maxlength="120"></label>
+    <label>Aviso <textarea id="texto" maxlength="2000"></textarea><div class="cont" id="cont">0 / 2000</div></label>
+    <div id="aviso" class="res oculto"></div>
+    <button class="b" id="pub">Publicar aviso</button>
+
+    <h2>Avisos publicados</h2>
+    <div id="lista"></div>
+    <button class="b gris" id="salir">Cambiar de usuario</button>
+  </div>
+</div>
+
+<script src="../config.js"></script>
+<script src="../catedra.js"></script>
+<script>
+/* Docentes: avisos solo a sus comisiones. Secretaría: avisos a todas las comisiones.
+   Se guardan en la hoja Avisos y aparecen en Novedades de la app del alumno. */
+var COD = "", ROL = "", PEND = false, PENDID = "";
+function $(i) { return document.getElementById(i); }
+function mostrar(id, si) { $(id).classList.toggle("oculto", !si); }
+function est(t, c) { $("est").textContent = t; $("est").className = "res " + (c || ""); }
+function aviso(t, c) { $("aviso").className = "res " + (c || ""); $("aviso").textContent = t || ""; mostrar("aviso", !!t); }
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+
+/* El código del docente se comparte con Asistencia y Notas (pb_token). La clave de secretaría se guarda aparte. */
+function leer(k) { try { var s = localStorage.getItem(k) || ""; try { s = JSON.parse(s); } catch (e) {} return String(s || ""); } catch (e) { return ""; } }
+function guardar(k, v) { try { if (v) { localStorage.setItem(k, JSON.stringify(v)); } else { localStorage.removeItem(k); } } catch (e) {} }
+
+function api(accion, datos) {
+  var body = JSON.stringify(Object.assign({ accion: accion, cod: COD }, datos || {}));
+  return fetch(URL_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: body })
+    .catch(function () { throw new Error("Sin conexión. Revisá la señal y probá de nuevo."); })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { if (j && j.error) { throw new Error(j.error); } return j; });
+}
+
+/* ---- ingreso ---- */
+function pedirCodigo(t, c) { est(t || "Escribí tu código para entrar.", c); mostrar("login", true); mostrar("pan", false); }
+function entrar(c) {
+  c = String(c || "").trim().toUpperCase();
+  if (!c) { pedirCodigo("Escribí el código."); return; }
+  COD = c; $("entrar").disabled = true; est("Verificando...", "warn");
+  api("n_av_estado").then(function (r) {
+    $("entrar").disabled = false;
+    if (r.rol === "secretaria") { guardar("pb_av", c); } else { guardar("pb_token", c); guardar("pb_av", ""); }
+    pintar(r);
+  }).catch(function (er) {
+    $("entrar").disabled = false;
+    if (er.message.indexOf("Sin conexión") < 0) { if (leer("pb_av") === c) { guardar("pb_av", ""); } COD = ""; }
+    pedirCodigo(er.message, "err");
+  });
+}
+$("entrar").onclick = function () { entrar($("cod").value); };
+$("cod").onkeydown = function (ev) { if (ev.key === "Enter") { entrar($("cod").value); } };
+$("salir").onclick = function () {
+  if (ROL === "secretaria") { guardar("pb_av", ""); } else { guardar("pb_token", ""); }
+  COD = ""; ROL = ""; $("cod").value = ""; pedirCodigo();
+};
+
+/* ---- pantalla ---- */
+function pintar(r) {
+  ROL = r.rol;
+  mostrar("login", false); mostrar("pan", true); aviso("");
+  if (ROL === "secretaria") {
+    est("Secretaría: tus avisos les llegan a todas las comisiones.");
+    mostrar("paraTodas", true); mostrar("com", false);
+  } else {
+    mostrar("paraTodas", false); mostrar("com", true);
+    var sel = $("com"), prev = sel.value; sel.innerHTML = "";
+    r.comisiones.forEach(function (n) { var o = document.createElement("option"); o.value = n; o.textContent = "Comisión " + n; sel.appendChild(o); });
+    if (prev) { sel.value = prev; }
+    if (!r.comisiones.length) {
+      est(r.nombre + ": todavía no tenés comisiones asignadas. Avisale a la secretaría.", "warn");
+      $("pub").disabled = true;
+    } else {
+      est("Hola, " + r.nombre + ". Tus avisos les llegan solo a tus comisiones.");
+      $("pub").disabled = false;
+    }
+  }
+  lista(r.avisos);
+}
+function lista(av) {
+  var l = $("lista");
+  if (!av.length) { l.innerHTML = '<div class="card muted">Todavía no hay avisos.</div>'; return; }
+  l.innerHTML = av.map(function (x) {
+    return '<div class="card' + (x.retirado ? " ret" : "") + '">' +
+      '<div style="margin-bottom:6px"><span class="chip">' + (x.general ? "Todas las comisiones" : "Comisión " + esc(x.com)) + "</span>" +
+      '<span class="muted">' + esc(x.fecha) + (x.retirado ? " · retirado" : "") + "</span></div>" +
+      (x.titulo ? '<div style="font-weight:600;margin-bottom:4px">' + esc(x.titulo) + "</div>" : "") +
+      '<div style="white-space:pre-wrap">' + esc(x.texto) + "</div>" +
+      (x.autor ? '<div class="muted" style="margin-top:6px">' + esc(x.autor) + "</div>" : "") +
+      (!x.retirado && x.id ? '<button class="ret-b" data-id="' + esc(x.id) + '">Retirar</button>' : "") +
+      "</div>";
+  }).join("");
+}
+
+/* ---- publicar (pide tocar dos veces) ---- */
+$("texto").oninput = function () { $("cont").textContent = $("texto").value.length + " / 2000"; };
+function txtPub() { return "Publicar aviso"; }
+$("pub").onclick = function () {
+  if (!$("texto").value.trim()) { aviso("Escribí el texto del aviso.", "err"); return; }
+  var para = ROL === "secretaria" ? "todas las comisiones" : "la comisión " + $("com").value;
+  if (!PEND) {
+    PEND = true; $("pub").textContent = "Tocá otra vez para publicarlo a " + para;
+    setTimeout(function () { PEND = false; $("pub").textContent = txtPub(); }, 5000); return;
+  }
+  PEND = false; var b = $("pub"); b.disabled = true; b.textContent = "Publicando...";
+  api("n_av_publicar", { alcance: $("com").value, titulo: $("titulo").value, texto: $("texto").value }).then(function (r) {
+    b.disabled = false; b.textContent = txtPub();
+    $("titulo").value = ""; $("texto").value = ""; $("cont").textContent = "0 / 2000";
+    pintar(r); aviso("Listo, el aviso ya aparece en Novedades de la app de los alumnos de " + para + ".", "ok");
+  }).catch(function (er) { b.disabled = false; b.textContent = txtPub(); aviso(er.message, "err"); });
+};
+
+/* ---- retirar (pide tocar dos veces) ---- */
+$("lista").onclick = function (ev) {
+  var b = ev.target.closest(".ret-b"); if (!b) { return; }
+  var id = b.getAttribute("data-id");
+  if (PENDID !== id) {
+    PENDID = id; b.textContent = "Tocá otra vez para retirarlo";
+    setTimeout(function () { if (PENDID === id) { PENDID = ""; b.textContent = "Retirar"; } }, 5000); return;
+  }
+  PENDID = ""; b.disabled = true; b.textContent = "Retirando...";
+  api("n_av_retirar", { id: id }).then(function (r) { pintar(r); aviso("Aviso retirado: ya no lo ven los alumnos.", "ok"); })
+    .catch(function (er) { b.disabled = false; b.textContent = "Retirar"; aviso(er.message, "err"); });
+};
+
+/* ---- arranque ---- */
+cargarCatedra(function (c) { var t = "Avisos · " + (c.CATEDRA_CORTO || c.CATEDRA_NOMBRE); document.title = t; $("tit").textContent = t; });
+COD = leer("pb_av") || leer("pb_token");
+if (COD) { entrar(COD); } else { pedirCodigo(); }
+</script>
+</body>
+</html>
