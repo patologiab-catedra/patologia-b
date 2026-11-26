@@ -42,6 +42,13 @@ textarea{min-height:140px;resize:vertical}
     <label>Código personal <input id="cod" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase"></label>
     <p class="muted" style="margin-top:-6px">Docentes: el mismo código de Notas y Asistencia. Secretaría: la clave de secretaría.</p>
     <button class="b" id="entrar">Entrar</button>
+    <p style="margin:10px 0 0"><a href="#" id="nocod" style="color:#1a56db">¿No tenés código o lo perdiste?</a></p>
+    <div id="pform" class="oculto" style="border-top:1px solid #e2e8f0;padding-top:14px;margin-top:10px">
+      <label>Nombre y apellido <input id="pnom" maxlength="80"></label>
+      <label>Comisión <select id="pcom"><option value="">Elegí tu comisión</option></select></label>
+      <label>Mail o celular para pasarte el código <input id="pcon" maxlength="80"></label>
+      <button class="b" id="penv">Pedir código</button>
+    </div>
   </div>
 
   <div id="pan" class="oculto">
@@ -106,6 +113,26 @@ $("cod").onkeydown = function (ev) { if (ev.key === "Enter") { entrar($("cod").v
 $("salir").onclick = function () {
   if (ROL === "secretaria") { guardar("pb_av", ""); } else { guardar("pb_token", ""); }
   COD = ""; ROL = ""; $("cod").value = ""; pedirCodigo();
+};
+
+/* ---- pedido de código (igual que en Notas) ---- */
+$("nocod").onclick = function (ev) {
+  ev.preventDefault();
+  var abrir = $("pform").classList.contains("oculto");
+  mostrar("pform", abrir);
+  if (abrir && $("pcom").options.length < 2) {
+    api("n_comisiones").then(function (r) {
+      r.comisiones.forEach(function (n) { var o = document.createElement("option"); o.value = n; o.textContent = "Comisión " + n; $("pcom").appendChild(o); });
+    }).catch(function (er) { est(er.message, "err"); });
+  }
+};
+$("penv").onclick = function () {
+  $("penv").disabled = true; est("Enviando el pedido...", "warn");
+  api("n_pedir", { nombre: $("pnom").value, com: $("pcom").value, contacto: $("pcon").value }).then(function () {
+    $("penv").disabled = false; mostrar("pform", false);
+    $("pnom").value = ""; $("pcom").value = ""; $("pcon").value = "";
+    est("Listo, la secretaría recibió tu pedido y te va a pasar el código.", "ok");
+  }).catch(function (er) { $("penv").disabled = false; est(er.message, "err"); });
 };
 
 /* ---- pantalla ---- */
