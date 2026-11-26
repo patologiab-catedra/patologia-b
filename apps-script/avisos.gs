@@ -1,10 +1,10 @@
 // ===== Avisos (Novedades de la app del alumno) desde GitHub Pages =====
 // Archivo NUEVO en el Apps Script de la cátedra: "+" junto a Archivos > Secuencia de comandos > avisos
-// Usa funciones que ya existen: ss_() y notasEstado(cod) (devuelve { nombre, comisiones }).
+// Usa funciones que ya existen: ss_(), notasEstado(cod) (devuelve { nombre, comisiones }) y comisionesPublicas().
 // Se llama desde notasApi_ (notasweb.gs) con las acciones n_av_estado, n_av_publicar y n_av_retirar.
 //
 // Quién publica:
-//   - Secretaría: avisos para TODAS las comisiones. Entra con la clave de secretaría.
+//   - Secretaría: avisos para TODAS las comisiones o para una sola. Entra con la clave de secretaría.
 //   - Docente: avisos solo para SUS comisiones. Entra con su código personal (el mismo de notas y asistencia).
 // Los avisos se guardan en la hoja "Avisos", que es la que lee la app del alumno (aluAvisos_ en alumno.gs).
 
@@ -36,7 +36,7 @@ function avUsuario_(cod) {
   cod = String(cod || '').trim().toUpperCase();
   if (!cod) { throw new Error('Falta el código personal.'); }
   var clave = PropertiesService.getScriptProperties().getProperty('AV_CLAVE_SECRETARIA');
-  if (clave && cod === clave) { return { rol: 'secretaria', nombre: 'Secretaría', comisiones: [] }; }
+  if (clave && cod === clave) { return { rol: 'secretaria', nombre: 'Secretaría', comisiones: (comisionesPublicas() || []).map(String) }; }
   var e = notasEstado(cod); // tira error si el código no es válido
   return { rol: 'docente', nombre: e.nombre, comisiones: (e.comisiones || []).map(String) };
 }
@@ -71,7 +71,6 @@ function avEstado_(u) {
   for (var i = 1; i < v.length; i++) {
     var r = v[i], alc = aluTxt_(r[m['Alcance']]), general = alc.indexOf('toda') >= 0, com = aluNorm_(alc);
     if (u.rol === 'docente' && (general || u.comisiones.indexOf(com) < 0)) { continue; }
-    if (u.rol === 'secretaria' && !general) { continue; }
     var est = aluTxt_(r[m['Estado']]);
     out.push({
       id: r[m['ID']], fecha: r[m['Fecha']], general: general, com: com,
@@ -89,11 +88,12 @@ function avPublicar_(u, alcance, titulo, texto) {
   if (texto.length > AV_MAX_TEXTO) { throw new Error('El aviso es muy largo (máximo ' + AV_MAX_TEXTO + ' letras).'); }
   if (titulo.length > AV_MAX_TITULO) { throw new Error('El título es muy largo (máximo ' + AV_MAX_TITULO + ' letras).'); }
   var alc;
-  if (u.rol === 'secretaria') {
+  var pedido = aluTxt_(alcance);
+  if (u.rol === 'secretaria' && (!pedido || pedido.indexOf('toda') >= 0)) {
     alc = 'Todas';
   } else {
     alc = aluNorm_(alcance);
-    if (!alc || u.comisiones.indexOf(alc) < 0) { throw new Error('Solo podés mandar avisos a tus comisiones.'); }
+    if (!alc || u.comisiones.indexOf(alc) < 0) { throw new Error(u.rol === 'secretaria' ? 'Esa comisión no existe.' : 'Solo podés mandar avisos a tus comisiones.'); }
   }
   // Evita que una fórmula escrita en el aviso se ejecute en la planilla
   function seguro(s) { return /^[=+\-@]/.test(s) ? "'" + s : s; }
@@ -125,7 +125,7 @@ function avRetirar_(u, id) {
     for (var i = 1; i < v.length; i++) {
       if (String(v[i][m['ID']]) !== id) { continue; }
       var alc = aluTxt_(v[i][m['Alcance']]), general = alc.indexOf('toda') >= 0;
-      var puede = u.rol === 'secretaria' ? general : (!general && u.comisiones.indexOf(aluNorm_(alc)) >= 0);
+      var puede = u.rol === 'secretaria' || (!general && u.comisiones.indexOf(aluNorm_(alc)) >= 0);
       if (!puede) { throw new Error('Este aviso no es tuyo para retirar.'); }
       sh.getRange(i + 1, m['Estado'] + 1).setValue('Retirado');
       return avEstado_(u);
