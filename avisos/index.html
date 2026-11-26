@@ -140,13 +140,15 @@ function pintar(r) {
   ROL = r.rol;
   mostrar("login", false); mostrar("pan", true); aviso("");
   if (ROL === "secretaria") {
-    est("Secretaría: tus avisos les llegan a todas las comisiones.");
-    mostrar("paraTodas", true); mostrar("com", false);
-  } else {
-    mostrar("paraTodas", false); mostrar("com", true);
-    var sel = $("com"), prev = sel.value; sel.innerHTML = "";
-    r.comisiones.forEach(function (n) { var o = document.createElement("option"); o.value = n; o.textContent = "Comisión " + n; sel.appendChild(o); });
-    if (prev) { sel.value = prev; }
+    est("Secretaría: podés mandar avisos a todas las comisiones o a una sola.");
+    $("pub").disabled = false;
+  }
+  mostrar("paraTodas", false); mostrar("com", true);
+  var sel = $("com"), prev = sel.value; sel.innerHTML = "";
+  if (ROL === "secretaria") { var t = document.createElement("option"); t.value = "todas"; t.textContent = "Todas las comisiones"; sel.appendChild(t); }
+  r.comisiones.forEach(function (n) { var o = document.createElement("option"); o.value = n; o.textContent = "Comisión " + n; sel.appendChild(o); });
+  if (prev && [].some.call(sel.options, function (o) { return o.value === prev; })) { sel.value = prev; }
+  if (ROL !== "secretaria") {
     if (!r.comisiones.length) {
       est(r.nombre + ": todavía no tenés comisiones asignadas. Avisale a la secretaría.", "warn");
       $("pub").disabled = true;
@@ -177,7 +179,7 @@ $("texto").oninput = function () { $("cont").textContent = $("texto").value.leng
 function txtPub() { return "Publicar aviso"; }
 $("pub").onclick = function () {
   if (!$("texto").value.trim()) { aviso("Escribí el texto del aviso.", "err"); return; }
-  var para = ROL === "secretaria" ? "todas las comisiones" : "la comisión " + $("com").value;
+  var para = $("com").value === "todas" ? "todas las comisiones" : "la comisión " + $("com").value;
   if (!PEND) {
     PEND = true; $("pub").textContent = "Tocá otra vez para publicarlo a " + para;
     setTimeout(function () { PEND = false; $("pub").textContent = txtPub(); }, 5000); return;
