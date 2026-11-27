@@ -117,6 +117,7 @@ function entrar(c) {
     if (!e.comisiones.length) { est(e.nombre + ": todavía no tenés comisiones asignadas. Avisale a la secretaría."); ver("sel"); $("ver").style.display = "none"; return; }
     $("ver").style.display = "block";
     est("Hola, " + e.nombre);
+    if (window.avisosSecretaria) { avisosSecretaria(c); }
     $("com").innerHTML = "";
     e.comisiones.forEach(function (n) { var o = document.createElement("option"); o.value = n; o.textContent = "Comisión " + n; $("com").appendChild(o); });
     ver("sel");
