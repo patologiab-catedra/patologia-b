@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#8528dd">
+<title>Justificaciones</title>
+<link rel="manifest" href="../docentes.webmanifest">
+<link rel="stylesheet" href="../tema.css">
+<style>
+body{margin:0}
+.w{max-width:560px;margin:0 auto;padding:16px}
+.b{display:block;box-sizing:border-box;width:100%;text-align:center;background:var(--primario);color:#fff;border:0;border-radius:10px;padding:14px;margin:10px 0;font-size:16px;cursor:pointer;font-family:inherit;font-weight:600}
+.b.gris{background:#64748b}
+.res{border-radius:10px;padding:14px;margin:10px 0;background:#e5e7eb;font-size:16px;text-align:center}
+.ok{background:#c9f2d3}.err{background:#fbd0d0}.warn{background:#fdeeba}
+input{display:block;width:100%;box-sizing:border-box;margin-top:6px;padding:12px;font-size:16px;border:1.5px solid var(--borde);border-radius:10px;background:var(--carta);text-transform:uppercase}
+.card{background:var(--carta);border:1px solid var(--borde);border-radius:12px;padding:12px 14px;margin:10px 0;line-height:1.5}
+.acc{display:flex;gap:8px;margin-top:10px}
+.acc button{flex:1;border-radius:10px;padding:11px;font:600 15px inherit;font-family:inherit;cursor:pointer}
+.si{background:#16a34a;color:#fff;border:0}.no{background:#fff;color:#b91c1c;border:2px solid #b91c1c}
+.chip{display:inline-block;font-size:12px;padding:2px 9px;border-radius:99px;font-weight:600}
+.oculto{display:none}
+a{color:var(--primario)}
+h2{font-size:18px;margin:20px 0 6px;color:var(--primario)}
+</style>
+</head>
+<body>
+<header class="barra-cat"><img class="logo" src="../logo.svg" alt="Logo de la cátedra"><div class="info"><b>Justificaciones</b><span>Secretaría</span></div></header>
+<div class="w">
+  <div id="est" class="res">Cargando...</div>
+  <div id="login" class="oculto">
+    <label>Clave de la secretaría <input id="cod" autocomplete="off" spellcheck="false"></label>
+    <button class="b" id="entrar">Entrar</button>
+  </div>
+  <div id="pan" class="oculto">
+    <h2>Para revisar</h2>
+    <div id="pend"></div>
+    <h2>Resueltas hace poco</h2>
+    <div id="rec"></div>
+    <button class="b gris" id="salir">Salir</button>
+  </div>
+</div>
+<script src="../config.js"></script>
+<script src="../catedra.js"></script>
+<script>
+/* Lista de justificaciones para la secretaría (respaldo de los botones del mail). Entra con la clave de secretaría. */
+var COD = "";
+function $(i) { return document.getElementById(i); }
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+function leer(k) { try { var s = localStorage.getItem(k) || ""; try { s = JSON.parse(s); } catch (e) {} return String(s || ""); } catch (e) { return ""; } }
+function est(t, c) { $("est").textContent = t; $("est").className = "res " + (c || ""); }
+function api(accion, d) {
+  return fetch(URL_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(Object.assign({ accion: accion, cod: COD }, d || {})) })
+    .catch(function () { throw new Error("Sin conexión."); })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { if (j && j.error) { throw new Error(j.error); } return j; });
+}
+function cargar() {
+  est("Cargando...", "warn");
+  api("n_jus_lista").then(function (r) {
+    try { localStorage.setItem("pb_av", JSON.stringify(COD)); } catch (e) {}
+    $("login").classList.add("oculto"); $("pan").classList.remove("oculto");
+    est(r.pendientes.length ? "Tenés " + r.pendientes.length + (r.pendientes.length === 1 ? " justificación" : " justificaciones") + " para revisar." : "No hay justificaciones pendientes.", r.pendientes.length ? "" : "ok");
+    $("pend").innerHTML = r.pendientes.length ? r.pendientes.map(function (j) {
+      return '<div class="card" data-id="' + esc(j.id) + '"><b>' + esc(j.alumno) + "</b> · Legajo " + esc(j.legajo) + " · Com. " + esc(j.com) +
+        "<br>Falta del <b>" + esc(j.fecha) + "</b> (" + esc(j.tipo) + ")" + (j.link ? ' · <a href="' + esc(j.link) + '" target="_blank" rel="noopener">Ver certificado</a>' : "") +
+        '<div class="acc"><button class="si" data-a="ok">Autorizar</button><button class="no" data-a="no">No autorizar</button></div></div>';
+    }).join("") : '<div class="card muted">Nada pendiente.</div>';
+    var col = { "Autorizada": "background:#c9f2d3;color:#1f7a4a", "No autorizada": "background:#fbd0d0;color:#a3262d" };
+    $("rec").innerHTML = r.recientes.length ? r.recientes.map(function (j) {
+      return '<div class="card">' + esc(j.alumno) + " · " + esc(j.fecha) + " (" + esc(j.tipo) + ') <span class="chip" style="' + (col[j.estado] || "") + '">' + esc(j.estado) + "</span></div>";
+    }).join("") : '<div class="card muted">Todavía no hay.</div>';
+  }).catch(function (er) { COD = ""; $("pan").classList.add("oculto"); $("login").classList.remove("oculto"); est(er.message, "err"); });
+}
+/* Autorizar / No autorizar: pide tocar dos veces; al rechazar se puede escribir un motivo */
+var PEND = "";
+$("pend").onclick = function (ev) {
+  var b = ev.target.closest("button[data-a]"); if (!b) { return; }
+  var card = b.closest(".card"), id = card.getAttribute("data-id"), a = b.getAttribute("data-a"), k = id + a;
+  if (PEND !== k) { PEND = k; b.textContent = "Tocá otra vez para confirmar"; setTimeout(function () { if (PEND === k) { PEND = ""; b.textContent = a === "ok" ? "Autorizar" : "No autorizar"; } }, 5000); return; }
+  PEND = "";
+  var motivo = a === "no" ? (prompt("Motivo (lo ve el alumno, opcional):") || "") : "";
+  b.disabled = true; b.textContent = "Guardando...";
+  api("n_jus_decidir", { id: id, a: a, motivo: motivo }).then(cargar).catch(function (er) { b.disabled = false; est(er.message, "err"); });
+};
+$("entrar").onclick = function () { COD = $("cod").value.trim().toUpperCase(); if (COD) { cargar(); } };
+$("salir").onclick = function () { COD = ""; try { localStorage.removeItem("pb_av"); } catch (e) {} $("pan").classList.add("oculto"); $("login").classList.remove("oculto"); est("Escribí la clave de la secretaría."); };
+COD = leer("pb_av");
+if (COD) { cargar(); } else { est("Escribí la clave de la secretaría."); $("login").classList.remove("oculto"); }
+</script>
+</body>
+</html>
