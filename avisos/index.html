@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#1a56db">
+<meta name="theme-color" content="#8528dd">
 <meta name="robots" content="noindex">
 <title>Avisos</title>
 <link rel="manifest" href="../docentes.webmanifest">
 <link rel="apple-touch-icon" href="../alumno/icon-192.png">
 <style>
-body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f5f6f8;color:#1b1b1b}
+body{margin:0;background:var(--fondo);color:#1b1b1b}
 .w{max-width:520px;margin:0 auto;padding:16px}
 h1{font-size:22px}
 h2{font-size:18px;margin:22px 0 6px}
-.b{display:block;box-sizing:border-box;width:100%;text-align:center;background:#1a56db;color:#fff;border:0;border-radius:10px;padding:14px;margin:10px 0;font-size:16px;cursor:pointer}
+.b{display:block;box-sizing:border-box;width:100%;text-align:center;background:var(--primario);color:#fff;border:0;border-radius:10px;padding:14px;margin:10px 0;font-size:16px;cursor:pointer}
 .b:disabled{opacity:.6}
 .b.gris{background:#64748b}
 .res{border-radius:10px;padding:16px;margin:10px 0;background:#e5e7eb;font-size:18px;text-align:center}
@@ -25,19 +25,22 @@ textarea{min-height:140px;resize:vertical}
 .cont{font-weight:400;color:#64748b;font-size:13px;text-align:right;margin-top:4px}
 .card{background:#fff;border-radius:10px;padding:12px;margin:8px 0}
 .card.ret{opacity:.55}
-.chip{display:inline-block;background:#e0e7ff;color:#1a56db;border-radius:99px;padding:2px 10px;font-size:13px;margin-right:6px}
+.chip{display:inline-block;background:#e0e7ff;color:var(--primario);border-radius:99px;padding:2px 10px;font-size:13px;margin-right:6px}
 .muted{color:#64748b;font-size:14px}
 .ret-b{background:none;border:1px solid #b91c1c;color:#b91c1c;border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer;margin-top:8px}
 .dnav{display:flex;gap:8px;margin:0 0 8px}
-.dnav a{flex:1;text-align:center;padding:10px 4px;border-radius:10px;border:2px solid #1a56db;color:#1a56db;background:#fff;text-decoration:none;font-size:15px}
-.dnav a.on{background:#1a56db;color:#fff}
+.dnav a{flex:1;text-align:center;padding:10px 4px;border-radius:10px;border:2px solid var(--primario);color:var(--primario);background:#fff;text-decoration:none;font-size:15px}
+.dnav a.on{background:var(--primario);color:#fff}
 .oculto{display:none}
-.quien{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff;border:2px solid #1a56db;border-radius:10px;padding:10px 12px;margin:0 0 6px}
+.quien{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff;border:2px solid var(--primario);border-radius:10px;padding:10px 12px;margin:0 0 6px}
 .quien.sec{border-color:#7c3aed}
 .quien button{background:none;border:1px solid #64748b;color:#334155;border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;white-space:nowrap}
 </style>
+<link rel="stylesheet" href="../tema.css">
+<style>body{background:var(--fondo);color:var(--texto);font-family:var(--fuente-texto)}h1{font-size:22px;margin:14px 0 8px}</style>
 </head>
 <body>
+<header class="barra-cat"><img class="logo" src="../logo.svg" alt="Logo de la cátedra"><div class="info"><b>Avisos</b><span>Docentes</span></div></header>
 <div class="w">
   <nav class="dnav"><a href="../">⌂ Asistencia</a><a href="../notas/">✎ Notas</a><a href="./" class="on">📢 Avisos</a></nav>
   <h1 id="tit">Avisos para los alumnos</h1>
@@ -47,7 +50,7 @@ textarea{min-height:140px;resize:vertical}
     <label>Código personal <input id="cod" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase"></label>
     <p class="muted" style="margin-top:-6px">Docentes: el mismo código de Notas y Asistencia. Secretaría: la clave de secretaría.</p>
     <button class="b" id="entrar">Entrar</button>
-    <p style="margin:10px 0 0"><a href="#" id="nocod" style="color:#1a56db">¿No tenés código o lo perdiste?</a></p>
+    <p style="margin:10px 0 0"><a href="#" id="nocod" style="color:var(--primario)">¿No tenés código o lo perdiste?</a></p>
     <div id="pform" class="oculto" style="border-top:1px solid #e2e8f0;padding-top:14px;margin-top:10px">
       <label>Nombre y apellido <input id="pnom" maxlength="80"></label>
       <label>Comisión <select id="pcom"><option value="">Elegí tu comisión</option></select></label>

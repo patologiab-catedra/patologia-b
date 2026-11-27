@@ -3,17 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#1a56db">
+<meta name="theme-color" content="#8528dd">
 <title>Carga de notas</title>
 <link rel="manifest" href="../docentes.webmanifest">
 <link rel="apple-touch-icon" href="../alumno/icon-192.png">
 <style>
-body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f5f6f8;color:#1b1b1b}
+body{margin:0;background:var(--fondo);color:#1b1b1b}
 .w{max-width:520px;margin:0 auto;padding:16px}
 h1{font-size:22px}
-.b{display:block;box-sizing:border-box;width:100%;text-align:center;background:#1a56db;color:#fff;border:0;border-radius:10px;padding:14px;margin:10px 0;font-size:16px;text-decoration:none;cursor:pointer}
+.b{display:block;box-sizing:border-box;width:100%;text-align:center;background:var(--primario);color:#fff;border:0;border-radius:10px;padding:14px;margin:10px 0;font-size:16px;text-decoration:none;cursor:pointer}
 .b:disabled{opacity:.6}
-.b.sec{background:#fff;color:#1a56db;border:2px solid #1a56db}
+.b.sec{background:#fff;color:var(--primario);border:2px solid var(--primario)}
 .b.gris{background:#64748b}
 .res{border-radius:10px;padding:16px;margin:10px 0;background:#e5e7eb;font-size:18px;text-align:center}
 .ok{background:#c9f2d3}.err{background:#fbd0d0}.warn{background:#fdeeba}
@@ -28,17 +28,20 @@ select{font-size:16px;padding:10px;margin:8px 0;width:100%;box-sizing:border-box
 .fila input.err{border-color:#dc2626;background:#fdeaea}
 .fila input.env{border-color:#d97706;background:#fff7e6}
 .tabs{display:flex;gap:8px;margin:8px 0}
-.tabs button{flex:1;padding:10px;font-size:15px;border:2px solid #1a56db;background:#fff;color:#1a56db;border-radius:10px;cursor:pointer}
-.tabs button.on{background:#1a56db;color:#fff}
+.tabs button{flex:1;padding:10px;font-size:15px;border:2px solid var(--primario);background:#fff;color:var(--primario);border-radius:10px;cursor:pointer}
+.tabs button.on{background:var(--primario);color:#fff}
 .tabs.fec button{font-size:14px;padding:8px;border-color:#64748b;color:#334155}
 .tabs.fec button.on{background:#334155;color:#fff}
 .dnav{display:flex;gap:8px;margin:0 0 8px}
-.dnav a{flex:1;text-align:center;padding:10px 4px;border-radius:10px;border:2px solid #1a56db;color:#1a56db;background:#fff;text-decoration:none;font-size:15px}
-.dnav a.on{background:#1a56db;color:#fff}
-#volver{display:none;background:none;border:0;color:#1a56db;font-size:16px;padding:6px 0;cursor:pointer}
+.dnav a{flex:1;text-align:center;padding:10px 4px;border-radius:10px;border:2px solid var(--primario);color:var(--primario);background:#fff;text-decoration:none;font-size:15px}
+.dnav a.on{background:var(--primario);color:#fff}
+#volver{display:none;background:none;border:0;color:var(--primario);font-size:16px;padding:6px 0;cursor:pointer}
 </style>
+<link rel="stylesheet" href="../tema.css">
+<style>body{background:var(--fondo);color:var(--texto);font-family:var(--fuente-texto)}h1{font-size:22px;margin:14px 0 8px}</style>
 </head>
 <body>
+<header class="barra-cat"><img class="logo" src="../logo.svg" alt="Logo de la cátedra"><div class="info"><b>Notas</b><span>Docentes</span></div></header>
 <div class="w">
   <nav class="dnav"><a href="../">⌂ Asistencia</a><a href="./" class="on">✎ Notas</a><a href="../avisos/">📢 Avisos</a></nav>
   <button id="volver">← Volver a comisiones</button>
@@ -48,7 +51,7 @@ select{font-size:16px;padding:10px;margin:8px 0;width:100%;box-sizing:border-box
   <div id="login" style="display:none">
     <label>Código personal <input id="cod" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase"></label>
     <button class="b" id="entrar">Entrar</button>
-    <p style="margin:10px 0 0"><a href="#" id="nocod" style="color:#1a56db">¿No tenés código o lo perdiste?</a></p>
+    <p style="margin:10px 0 0"><a href="#" id="nocod" style="color:var(--primario)">¿No tenés código o lo perdiste?</a></p>
     <div id="pform" style="display:none">
       <label>Nombre y apellido <input id="pnom" maxlength="80"></label>
       <label>Comisión <select id="pcom"><option value="">Elegí tu comisión</option></select></label>

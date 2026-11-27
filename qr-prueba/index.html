@@ -3,24 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#8528dd">
 <title>QR de prueba</title>
 <link rel="manifest" href="../docentes.webmanifest">
 <link rel="apple-touch-icon" href="../alumno/icon-192.png">
 <style>
-body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f5f6f8;color:#1b1b1b}
+body{margin:0;background:var(--fondo);color:#1b1b1b}
 .w{max-width:900px;margin:0 auto;padding:16px}
 h1{font-size:22px}
-.b{display:block;box-sizing:border-box;width:100%;max-width:520px;text-align:center;background:#1a56db;color:#fff;border:0;border-radius:10px;padding:14px;margin:10px 0;font-size:16px;cursor:pointer}
+.b{display:block;box-sizing:border-box;width:100%;max-width:520px;text-align:center;background:var(--primario);color:#fff;border:0;border-radius:10px;padding:14px;margin:10px 0;font-size:16px;cursor:pointer}
 .res{border-radius:10px;padding:16px;margin:10px 0;background:#e5e7eb;font-size:18px;text-align:center;max-width:520px;box-sizing:border-box}
 .err{background:#fbd0d0}.warn{background:#fdeeba}
 input{display:block;width:100%;max-width:520px;box-sizing:border-box;margin-top:6px;padding:12px;font-size:16px;border:1px solid #cbd5e1;border-radius:8px;text-transform:uppercase}
 .card{display:inline-block;background:#fff;border-radius:10px;padding:10px;margin:8px;text-align:center;vertical-align:top;width:200px}
 .card svg{width:180px;height:180px}
 .dnav{display:flex;gap:8px;margin:0 0 8px;max-width:520px}
-.dnav a{flex:1;text-align:center;padding:10px 4px;border-radius:10px;border:2px solid #1a56db;color:#1a56db;background:#fff;text-decoration:none;font-size:15px}
+.dnav a{flex:1;text-align:center;padding:10px 4px;border-radius:10px;border:2px solid var(--primario);color:var(--primario);background:#fff;text-decoration:none;font-size:15px}
 </style>
+<link rel="stylesheet" href="../tema.css">
+<style>body{background:var(--fondo);color:var(--texto);font-family:var(--fuente-texto)}h1{font-size:22px;margin:14px 0 8px}</style>
 </head>
 <body>
+<header class="barra-cat"><img class="logo" src="../logo.svg" alt="Logo de la cátedra"><div class="info"><b>QR de prueba</b><span>Docentes</span></div></header>
 <div class="w">
   <nav class="dnav"><a href="../">⌂ Asistencia</a><a href="../notas/">✎ Notas</a><a href="../avisos/">📢 Avisos</a></nav>
   <h1>QR de los alumnos de prueba</h1>
@@ -32,6 +36,8 @@ input{display:block;width:100%;max-width:520px;box-sizing:border-box;margin-top:
   <div id="g"></div>
 </div>
 <script src="../config.js"></script>
+<script src="../catedra.js"></script>
+<script>cargarCatedra(function () {});</script>
 <script src="../alumno/qrcode.js"></script>
 <script>
 /* Muestra los QR de las comisiones del docente, con el mismo código del escáner y de la carga de notas. */

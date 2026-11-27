@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#16325c">
+<meta name="theme-color" content="#8528dd">
+<link rel="stylesheet" href="../tema.css">
 <title>App de la cátedra</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -11,25 +12,26 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Cátedra">
 <style>
-:root{--azul:#16325c;--azul2:#1a56db;--fondo:#f4f5f7;--carta:#fff;--txt:#1b1b1b;--sec:#5b6270;--borde:#e3e5ea;--ok:#127a3c;--okf:#dcf3e4;--warn:#8a5a00;--warnf:#fdf0cf;--err:#a52222;--errf:#fbdede}
+/* Los colores salen de ../tema.css (color base de la hoja Config) */
+:root{--azul:var(--primario);--azul2:var(--primario);--txt:var(--texto);--sec:var(--texto-2);--ok:#127a3c;--okf:#dcf3e4;--warn:#8a5a00;--warnf:#fdf0cf;--err:#a52222;--errf:#fbdede}
 *{box-sizing:border-box}
-html,body{margin:0;background:var(--fondo);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:16px;line-height:1.45}
-header{background:var(--azul);color:#fff;padding:14px 18px calc(14px);padding-top:calc(14px + env(safe-area-inset-top))}
-header .t{font-size:17px;font-weight:600}
-header .s{font-size:13px;opacity:.8}
+html,body{margin:0;background:var(--fondo);color:var(--txt);font-family:var(--fuente-texto);font-size:16px;line-height:1.45}
+#b-salir-top{background:none;border:1px solid rgba(255,255,255,.55);color:#fff;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;white-space:nowrap;margin-top:8px}
 main{max-width:560px;margin:0 auto;padding:16px 16px 96px}
 h2{font-size:20px;margin:6px 0 12px}
 h3{font-size:16px;margin:18px 0 8px}
 .card{background:var(--carta);border:1px solid var(--borde);border-radius:14px;padding:16px;margin:0 0 12px}
-.big{font-size:40px;font-weight:700;line-height:1}
+.big{font-size:44px;font-weight:300;line-height:1;font-family:var(--fuente-titulo);font-stretch:125%}
 .muted{color:var(--sec);font-size:14px}
 .btn{display:block;width:100%;border:0;border-radius:12px;padding:14px;font-size:16px;font-weight:600;background:var(--azul2);color:#fff;text-align:center;text-decoration:none;cursor:pointer;margin:10px 0}
-.btn.sec{background:#e8ebf1;color:var(--azul)}
+.btn:hover{background:var(--primario-hover)}
+.btn.sec{background:var(--primario-suave);color:var(--v-800)}
 .btn:disabled{opacity:.5}
-input{width:100%;font-size:20px;padding:12px 14px;border:1px solid #c9cdd6;border-radius:12px;margin:6px 0;background:#fff}
+input{width:100%;font-size:20px;padding:12px 14px;border:1.5px solid var(--borde);border-radius:12px;margin:6px 0;background:var(--carta);color:var(--texto);font-family:inherit}
+input:focus{outline:0;border-color:var(--primario);box-shadow:0 0 0 3px var(--v-100)}
 input.cod{letter-spacing:8px;text-align:center;font-size:26px}
 .aviso{border-left:4px solid var(--azul2);border-radius:0}
-.chip{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:#e8ebf1;color:var(--azul);margin-right:6px}
+.chip{display:inline-block;font-size:12px;padding:2px 9px;border-radius:99px;background:var(--primario-suave);color:var(--v-800);font-weight:600;margin-right:6px}
 .msg{border-radius:12px;padding:12px;margin:10px 0;font-size:15px}
 .msg.err{background:var(--errf);color:var(--err)}.msg.ok{background:var(--okf);color:var(--ok)}.msg.warn{background:var(--warnf);color:var(--warn)}
 .est-ok{background:var(--okf);color:var(--ok)}.est-warn{background:var(--warnf);color:var(--warn)}.est-err{background:var(--errf);color:var(--err)}
@@ -38,18 +40,21 @@ th,td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--borde)}
 th:first-child,td:first-child{text-align:left}
 .fila{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--borde)}
 .fila:last-child{border-bottom:0}
-#qrbox{background:#fff;border-radius:16px;padding:18px;display:flex;justify-content:center}
+#qrbox{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:18px;display:flex;justify-content:center}
 #qrbox img,#qrbox canvas{width:100%;max-width:320px;height:auto;image-rendering:pixelated}
-nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--borde);display:flex;padding-bottom:env(safe-area-inset-bottom)}
-nav button{flex:1;border:0;background:none;padding:10px 2px 12px;font-size:12px;color:var(--sec);cursor:pointer}
-nav button .i{display:block;font-size:20px;line-height:1.2}
-nav button.on{color:var(--azul2);font-weight:600}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--carta);border-top:1px solid var(--borde);display:flex;padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;padding:9px 2px 11px;font-size:11.5px;color:var(--sec);cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button .i{display:flex;align-items:center;justify-content:center;width:44px;height:28px;border-radius:14px;transition:background .2s}
+nav button.on{color:var(--primario);font-weight:600}
+nav button.on .i{background:var(--primario-suave)}
+nav button.on .ico{stroke-width:2.3}
 .oculto{display:none!important}
 a{color:var(--azul2)}
 </style>
 </head>
 <body>
-<header><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px"><div><div class="t" id="htit">Cátedra</div><div class="s" id="hsub"></div></div><button id="b-salir-top" class="oculto" style="background:none;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;white-space:nowrap">Salir</button></div></header>
+<div id="splash" aria-hidden="true"><img src="../logo.svg" alt=""><div class="puntos"><i></i><i></i><i></i></div></div>
+<header class="barra-cat"><img class="logo" src="../logo.svg" alt="Logo de la cátedra"><div class="info"><b id="htit">Cátedra</b><span id="hsub"></span><br><button id="b-salir-top" class="oculto">Salir</button></div></header>
 <main>
 
   <!-- ===== Ingreso ===== -->
@@ -123,11 +128,11 @@ a{color:var(--azul2)}
 
 </main>
 <nav id="nav" class="oculto">
-  <button data-ir="inicio"><span class="i">⌂</span>Inicio</button>
-  <button data-ir="qr"><span class="i">▦</span>Mi QR</button>
-  <button data-ir="asis"><span class="i">✓</span>Asistencia</button>
-  <button data-ir="notas"><span class="i">✎</span>Notas</button>
-  <button data-ir="nov"><span class="i">◉</span>Novedades</button>
+  <button data-ir="inicio"><span class="i" data-ico="inicio"></span>Inicio</button>
+  <button data-ir="qr"><span class="i" data-ico="qr"></span>Mi QR</button>
+  <button data-ir="asis"><span class="i" data-ico="asistencia"></span>Asistencia</button>
+  <button data-ir="notas"><span class="i" data-ico="notas"></span>Notas</button>
+  <button data-ir="nov"><span class="i" data-ico="novedades"></span>Novedades</button>
 </nav>
 
 <script src="../config.js"></script>
@@ -372,6 +377,8 @@ function tablaNotas(n) {
 }
 
 /* ---------- arranque ---------- */
+[].forEach.call(document.querySelectorAll("[data-ico]"), function (e) { e.innerHTML = icono(e.getAttribute("data-ico")); });
+setTimeout(function () { var sp = $("splash"); if (sp) { sp.classList.add("fuera"); setTimeout(function () { sp.remove(); }, 400); } }, 1100);
 cargarCatedra(function (c) {
   document.title = c.CATEDRA_CORTO || c.CATEDRA_NOMBRE;
   $("htit").textContent = c.CATEDRA_NOMBRE;
