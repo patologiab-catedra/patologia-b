@@ -32,6 +32,9 @@ textarea{min-height:140px;resize:vertical}
 .dnav a{flex:1;text-align:center;padding:10px 4px;border-radius:10px;border:2px solid #1a56db;color:#1a56db;background:#fff;text-decoration:none;font-size:15px}
 .dnav a.on{background:#1a56db;color:#fff}
 .oculto{display:none}
+.quien{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#fff;border:2px solid #1a56db;border-radius:10px;padding:10px 12px;margin:0 0 6px}
+.quien.sec{border-color:#7c3aed}
+.quien button{background:none;border:1px solid #64748b;color:#334155;border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -54,6 +57,7 @@ textarea{min-height:140px;resize:vertical}
   </div>
 
   <div id="pan" class="oculto">
+    <div class="quien" id="quien"><span>Publicás como <b id="quienNom"></b></span><button id="cambiar">Cambiar</button></div>
     <h2>Nuevo aviso</h2>
     <label>Para
       <div class="para oculto" id="paraTodas">Todas las comisiones</div>
@@ -112,6 +116,7 @@ function entrar(c) {
 }
 $("entrar").onclick = function () { entrar($("cod").value); };
 $("cod").onkeydown = function (ev) { if (ev.key === "Enter") { entrar($("cod").value); } };
+$("cambiar").onclick = function () { $("salir").click(); };
 $("salir").onclick = function () {
   if (ROL === "secretaria") { guardar("pb_av", ""); } else { guardar("pb_token", ""); }
   COD = ""; ROL = ""; $("cod").value = ""; pedirCodigo();
@@ -140,6 +145,8 @@ $("penv").onclick = function () {
 /* ---- pantalla ---- */
 function pintar(r) {
   ROL = r.rol;
+  $("quienNom").textContent = r.rol === "secretaria" ? "Secretaría" : r.nombre + " (docente)";
+  $("quien").className = "quien" + (r.rol === "secretaria" ? " sec" : "");
   mostrar("login", false); mostrar("pan", true); aviso("");
   if (ROL === "secretaria") {
     est("Secretaría: podés mandar avisos a todas las comisiones o a una sola.");
