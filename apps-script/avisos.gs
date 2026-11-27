@@ -4,7 +4,8 @@
 // Se llama desde notasApi_ (notasweb.gs) con las acciones n_av_estado, n_av_publicar y n_av_retirar.
 //
 // Quién publica:
-//   - Secretaría: avisos para TODAS las comisiones o para una sola. Entra con la clave de secretaría.
+//   - Secretaría: avisos para TODAS las comisiones, para una sola, o para los DOCENTES (no los ven los alumnos).
+//     Entra con la clave de secretaría.
 //   - Docente: avisos solo para SUS comisiones. Entra con su código personal (el mismo de notas y asistencia).
 // Los avisos se guardan en la hoja "Avisos", que es la que lee la app del alumno (aluAvisos_ en alumno.gs).
 
@@ -29,6 +30,7 @@ function avisosApi_(d) {
   if (d.accion === 'n_av_estado') { return avEstado_(u); }
   if (d.accion === 'n_av_publicar') { return avPublicar_(u, d.alcance, d.titulo, d.texto); }
   if (d.accion === 'n_av_retirar') { return avRetirar_(u, d.id); }
+  if (d.accion === 'n_av_docentes') { return avParaDocentes_(); }
   return { error: 'Acción desconocida' };
 }
 
@@ -70,11 +72,11 @@ function avColumnas_(sh) {
 function avEstado_(u) {
   var sh = avHoja_(), m = avColumnas_(sh), v = sh.getDataRange().getDisplayValues(), out = [];
   for (var i = 1; i < v.length; i++) {
-    var r = v[i], alc = aluTxt_(r[m['Alcance']]), general = alc.indexOf('toda') >= 0, com = aluNorm_(alc);
-    if (u.rol === 'docente' && (general || u.comisiones.indexOf(com) < 0)) { continue; }
+    var r = v[i], alc = aluTxt_(r[m['Alcance']]), general = alc.indexOf('toda') >= 0, com = aluNorm_(alc), paraDoc = alc.indexOf('docente') >= 0;
+    if (u.rol === 'docente' && (general || paraDoc || u.comisiones.indexOf(com) < 0)) { continue; }
     var est = aluTxt_(r[m['Estado']]);
     out.push({
-      id: r[m['ID']], fecha: r[m['Fecha y hora']], general: general, com: com,
+      id: r[m['ID']], fecha: r[m['Fecha y hora']], general: general, com: com, docentes: paraDoc,
       titulo: r[m['Título']], texto: r[m['Texto']], autor: r[m['Autor']],
       retirado: est.indexOf('retirad') >= 0
     });
@@ -92,6 +94,9 @@ function avPublicar_(u, alcance, titulo, texto) {
   var pedido = aluTxt_(alcance);
   if (u.rol === 'secretaria' && (!pedido || pedido.indexOf('toda') >= 0)) {
     alc = 'Todas';
+  } else if (pedido.indexOf('docente') >= 0) {
+    if (u.rol !== 'secretaria') { throw new Error('Solo la secretaría puede mandar avisos a los docentes.'); }
+    alc = 'Docentes';
   } else {
     alc = aluNorm_(alcance);
     if (!alc || u.comisiones.indexOf(alc) < 0) { throw new Error(u.rol === 'secretaria' ? 'Esa comisión no existe.' : 'Solo podés mandar avisos a tus comisiones.'); }
@@ -114,6 +119,19 @@ function avPublicar_(u, alcance, titulo, texto) {
     sh.getRange(n, 1, 1, fila.length).setNumberFormat('@').setValues([fila]);
   } finally { lock.releaseLock(); }
   return avEstado_(u);
+}
+
+// ---------- Avisos de la secretaría para los docentes (los ve cualquier docente con código válido) ----------
+function avParaDocentes_() {
+  var sh = avHoja_(), m = avColumnas_(sh), v = sh.getDataRange().getDisplayValues(), out = [];
+  for (var i = 1; i < v.length; i++) {
+    var r = v[i];
+    if (aluTxt_(r[m['Alcance']]).indexOf('docente') < 0) { continue; }
+    var est = aluTxt_(r[m['Estado']]);
+    if (est.indexOf('retirad') >= 0) { continue; }
+    out.push({ id: r[m['ID']], fecha: r[m['Fecha y hora']], titulo: r[m['Título']], texto: r[m['Texto']], autor: r[m['Autor']] });
+  }
+  return { avisos: out.reverse().slice(0, 10) };
 }
 
 // ---------- Retirar (deja de verse en la app; queda en la hoja) ----------
