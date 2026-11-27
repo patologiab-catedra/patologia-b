@@ -47,6 +47,8 @@ nav button{flex:1;border:0;background:none;padding:9px 2px 11px;font-size:11.5px
 nav button .i{display:flex;align-items:center;justify-content:center;width:44px;height:28px;border-radius:14px;transition:background .2s}
 nav button.on{color:var(--primario);font-weight:600}
 nav button.on .i{background:var(--primario-suave)}
+nav button .i{position:relative}
+.badge{position:absolute;top:-3px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:#e5484d;color:#fff;font:700 11px/18px system-ui,sans-serif;text-align:center;box-shadow:0 0 0 2px var(--carta)}
 nav button.on .ico{stroke-width:2.3}
 .oculto{display:none!important}
 a{color:var(--azul2)}
@@ -102,7 +104,20 @@ a{color:var(--azul2)}
   <section id="v-asis" class="oculto">
     <h2>Asistencia</h2>
     <div id="asis-cont"></div>
-    <p class="muted">Las faltas con certificado cuentan como presente solo cuando la secretaría las autoriza.</p>
+    <div class="card" id="justif">
+      <h3 style="margin-top:0">¿Faltaste con certificado?</h3>
+      <p class="muted" style="margin-top:0">Mandalo y la secretaría lo revisa. La falta cuenta como presente cuando lo autoriza.</p>
+      <div id="justif-form" class="oculto">
+        <label class="muted" for="justif-dia">¿Qué día faltaste?</label>
+        <select id="justif-dia" style="width:100%;font-size:17px;padding:12px;border:1.5px solid var(--borde);border-radius:12px;background:var(--carta);color:var(--texto);margin:6px 0;font-family:inherit"></select>
+        <p class="muted" style="margin:4px 0 0">Se abre tu mail con todo escrito: solo adjuntá la foto del certificado y enviá.</p>
+        <button class="btn" id="justif-mail">Abrir mi mail</button>
+        <button class="btn sec" id="justif-cancelar">Cancelar</button>
+      </div>
+      <button class="btn" id="justif-abrir">Mandar certificado</button>
+      <div id="justif-msg"></div>
+      <div id="justif-pedidos"></div>
+    </div>
   </section>
 
   <!-- ===== Notas ===== -->
@@ -164,6 +179,7 @@ function ir(v) {
   $("nav").classList.toggle("oculto", !adentro);
   $("b-salir-top").classList.toggle("oculto", !adentro);
   [].forEach.call(document.querySelectorAll("nav button"), function (b) { b.classList.toggle("on", b.getAttribute("data-ir") === v); });
+  if (v === "nov") { marcarAvisosLeidos(); }
   window.scrollTo(0, 0);
 }
 document.addEventListener("click", function (e) {
@@ -234,6 +250,19 @@ function campo(obj, re) {
   return null;
 }
 
+/* Avisos sin leer: número rojo sobre Novedades en la barra de abajo */
+function claveAviso(x) { return [x.fecha, x.titulo, String(x.texto || "").slice(0, 60)].join("|"); }
+function badgeNovedades() {
+  var vistos = load("alu_av_vistos", {}), n = ((D && D.avisos) || []).filter(function (a) { return !vistos[claveAviso(a)]; }).length;
+  var i = document.querySelector('nav button[data-ir="nov"] .i'); if (!i) { return; }
+  var b = i.querySelector(".badge"); if (b) { b.remove(); }
+  if (n) { b = document.createElement("span"); b.className = "badge"; b.textContent = n > 9 ? "9+" : n; i.appendChild(b); }
+  i.parentNode.setAttribute("aria-label", "Novedades" + (n ? ": " + n + " sin leer" : ""));
+}
+function marcarAvisosLeidos() {
+  var vistos = load("alu_av_vistos", {}); ((D && D.avisos) || []).forEach(function (a) { vistos[claveAviso(a)] = 1; });
+  save("alu_av_vistos", vistos); badgeNovedades();
+}
 function pintar() {
   if (!D) { return; }
   var a = D.alumno, r = D.resumen;
@@ -334,6 +363,8 @@ function pintar() {
   $("b-ig").href = ig || "#";
   $("b-ig").classList.toggle("oculto", !ig);
   $("nov-cont").innerHTML = av.length ? av.map(tarjetaAviso).join("") : '<div class="card muted">No hay avisos por ahora.</div>';
+  badgeNovedades();
+  if (!$("v-nov").classList.contains("oculto")) { marcarAvisosLeidos(); }
 
   /* cátedra */
   var cfg = D.config || {}, links = "";
@@ -354,6 +385,20 @@ function tarjetaAviso(x) {
     (x.autor ? '<div class="muted" style="margin-top:6px">' + esc(x.autor) + "</div>" : "") + "</div>";
 }
 
+/* Promoción: 7 o más en la 1.ª fecha de los 3 parciales.
+   "En vías": todas las 1.ª fechas que ya rindió son 7 o más. Si rindió un parcial y no le dio 7 en la 1.ª fecha, ya no promociona. */
+function promocion(g) {
+  var num = function (x) { var n = parseFloat(String(x == null ? "" : x).replace(",", ".")); return isNaN(n) ? null : n; };
+  var rendidos = 0, ok = 0, corta = false;
+  ["1", "2", "3"].forEach(function (p) {
+    var fs = g[p] || {}, f1 = num(fs[1]), otras = [2, 3, 4].some(function (f) { return num(fs[f]) !== null; });
+    if (f1 !== null || otras) { rendidos++; if (f1 !== null && f1 >= 7) { ok++; } else { corta = true; } }
+  });
+  if (!rendidos) { return ""; }
+  if (corta) { return '<div class="card"><div class="muted">Promoción</div><div style="font-weight:700;margin-top:2px">No promocionás este año</div><div class="muted" style="margin-top:4px">Para promocionar hace falta 7 o más en la 1.ª fecha de los 3 parciales. Igual podés aprobar la cursada con 4 o más.</div></div>'; }
+  if (ok === 3) { return '<div class="card" style="border-color:var(--primario)"><div class="muted">Promoción</div><div style="font-weight:700;font-size:20px;color:var(--primario);margin-top:2px">¡Promocionás!</div><div class="muted" style="margin-top:4px">Sacaste 7 o más en la 1.ª fecha de los 3 parciales.</div></div>'; }
+  return '<div class="card" style="border-color:var(--primario);background:var(--v-50)"><div class="muted">Promoción</div><div style="font-weight:700;font-size:18px;color:var(--primario);margin-top:2px">En vías de promoción</div><div class="muted" style="margin-top:4px">Vas ' + ok + ' de 3: seguí con 7 o más en la 1.ª fecha ' + (3 - ok === 1 ? "del parcial que falta" : "de los parciales que faltan") + '.</div></div>';
+}
 function tablaNotas(n) {
   if (!n) { return '<div class="card muted">Todavía no hay notas cargadas.</div>'; }
   var g = {}, cond = null, hay = false;
@@ -370,11 +415,44 @@ function tablaNotas(n) {
     for (var f = 1; f <= 4; f++) { var v = g[p][f]; h += "<td>" + esc(v === undefined || v === "" ? "–" : v) + "</td>"; }
     h += "</tr>";
   });
-  h += '</table><p class="muted" style="margin-bottom:0">Cada columna es una fecha del parcial. Aprobás con 4 o más.</p></div>';
+  h += '</table><p class="muted" style="margin-bottom:0">Cada columna es una fecha del parcial. Aprobás con <b>4</b> o más. Promocionás con <b>7 o más en la 1.ª fecha</b> de cada parcial.</p></div>';
+  h += promocion(g);
   if (cond) { h += '<div class="card"><div class="muted">Condición</div><div style="font-size:20px;font-weight:700">' + esc(cond) + "</div></div>"; }
   if (!hay) { h = '<div class="card muted">Todavía no hay notas cargadas.</div>'; }
   return h;
 }
+
+/* ---------- Justificaciones: mandar certificado por mail ---------- */
+var JU = null;
+function cargarJustif() {
+  api("alu_justif").then(function (r) { JU = r; pintarJustif(); }).catch(function () { $("justif-msg").innerHTML = '<div class="msg warn">Necesitás señal para mandar un certificado.</div>'; });
+}
+function diaLindo(iso) { var p = String(iso || "").split("-"); return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : iso; }
+function pintarJustif() {
+  if (!JU) { return; }
+  $("justif-msg").innerHTML = "";
+  var sel = $("justif-dia"); sel.innerHTML = "";
+  JU.ausencias.forEach(function (x) { var o = document.createElement("option"); o.value = x.fecha + "|" + x.tipo; o.textContent = diaLindo(x.fecha) + " · " + x.tipo; sel.appendChild(o); });
+  $("justif-abrir").disabled = !JU.ausencias.length;
+  $("justif-abrir").textContent = JU.ausencias.length ? "Mandar certificado" : "No tenés faltas para justificar";
+  var est = { "En revisión": "est-warn", "Autorizada": "est-ok", "No autorizada": "est-err" };
+  $("justif-pedidos").innerHTML = JU.pedidos.length ? '<h3>Tus certificados</h3>' + JU.pedidos.map(function (p) {
+    return '<div class="fila"><span>' + esc(diaLindo(p.fecha)) + " · " + esc(p.tipo) + (p.obs && p.estado === "No autorizada" ? '<br><span class="muted">' + esc(p.obs) + "</span>" : "") +
+      '</span><span class="chip ' + (est[p.estado] || "") + '" style="margin:0;align-self:center;white-space:nowrap">' + esc(p.estado) + "</span></div>";
+  }).join("") : "";
+}
+$("justif-abrir").onclick = function () { $("justif-form").classList.remove("oculto"); $("justif-abrir").classList.add("oculto"); };
+$("justif-cancelar").onclick = function () { $("justif-form").classList.add("oculto"); $("justif-abrir").classList.remove("oculto"); };
+$("justif-mail").onclick = function () {
+  if (!JU || !D) { return; }
+  var v = $("justif-dia").value.split("|"), a = D.alumno;
+  var asunto = JU.asunto + " · Legajo " + a.legajo + " · Comisión " + a.com + " · " + diaLindo(v[0]) + " · " + v[1];
+  var cuerpo = "Adjunto el certificado de la falta del " + diaLindo(v[0]) + " (" + v[1] + ").\n\nNombre: " + a.apellido + ", " + a.nombre + "\nLegajo: " + a.legajo + "\nComisión: " + a.com + "\n\n(No cambies el asunto del mail: así la app lo carga sola.)";
+  location.href = "mailto:" + JU.mail + "?subject=" + encodeURIComponent(asunto) + "&body=" + encodeURIComponent(cuerpo);
+  $("justif-form").classList.add("oculto"); $("justif-abrir").classList.remove("oculto");
+  $("justif-msg").innerHTML = '<div class="msg ok">Cuando lo mandes, en unos minutos aparece acá abajo como «En revisión».</div>';
+};
+document.addEventListener("click", function (e) { var b = e.target.closest('[data-ir="asis"]'); if (b) { cargarJustif(); } });
 
 /* ---------- arranque ---------- */
 [].forEach.call(document.querySelectorAll("[data-ico]"), function (e) { e.innerHTML = icono(e.getAttribute("data-ico")); });
