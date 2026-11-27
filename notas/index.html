@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#1a56db">
 <title>Carga de notas</title>
+<link rel="manifest" href="../docentes.webmanifest">
+<link rel="apple-touch-icon" href="../alumno/icon-192.png">
 <style>
 body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f5f6f8;color:#1b1b1b}
 .w{max-width:520px;margin:0 auto;padding:16px}
@@ -220,5 +222,6 @@ cargarCatedra(function (c) { var t = "Notas · " + (c.CATEDRA_CORTO || c.CATEDRA
 COD = leerCod();
 if (COD) { entrar(COD); } else { pedirCodigo(); }
 </script>
+<script src="../instalar.js" data-nombre="la app de docentes" data-sw="sw-docentes.js"></script>
 </body>
 </html>
