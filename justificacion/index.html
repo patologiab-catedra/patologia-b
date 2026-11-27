@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#8528dd">
+<title>Justificación</title>
+<link rel="stylesheet" href="../tema.css">
+<style>
+body{margin:0}
+.w{max-width:520px;margin:0 auto;padding:16px}
+.b{display:block;box-sizing:border-box;width:100%;text-align:center;color:#fff;border:0;border-radius:10px;padding:14px;margin:10px 0;font-size:16px;cursor:pointer;font-family:inherit;font-weight:600}
+.b:disabled{opacity:.6}
+.res{border-radius:12px;padding:16px;margin:10px 0;background:var(--carta);border:1px solid var(--borde);font-size:17px;line-height:1.5}
+.ok{background:#c9f2d3;border-color:#c9f2d3}.err{background:#fbd0d0;border-color:#fbd0d0}.warn{background:#fdeeba;border-color:#fdeeba}
+textarea{display:block;width:100%;box-sizing:border-box;min-height:80px;padding:12px;font-size:16px;border:1.5px solid var(--borde);border-radius:10px;font-family:inherit;background:var(--carta)}
+a{color:var(--primario)}
+</style>
+</head>
+<body>
+<header class="barra-cat"><img class="logo" src="../logo.svg" alt="Logo de la cátedra"><div class="info"><b>Justificación</b><span>Secretaría</span></div></header>
+<div class="w">
+  <div id="est" class="res">Cargando la justificación...</div>
+  <div id="motivo" style="display:none"><label class="muted" for="mot">Motivo (lo ve el alumno, opcional)</label><textarea id="mot" maxlength="200" placeholder="Por ejemplo: el certificado no se lee bien"></textarea></div>
+  <button class="b" id="go" style="display:none"></button>
+  <p style="margin-top:18px"><a href="../justificaciones/">Ver todas las justificaciones pendientes</a></p>
+</div>
+<script src="../config.js"></script>
+<script src="../catedra.js"></script>
+<script>
+/* Se abre desde los botones Autorizar / No autorizar del mail. Pide confirmar, así un revisor de links del correo no lo resuelve solo. */
+function $(i) { return document.getElementById(i); }
+var q = new URLSearchParams(location.search);
+var P = { id: q.get("id") || "", a: q.get("a") === "no" ? "no" : "ok", f: q.get("f") || "" };
+function api(accion, extra) {
+  return fetch(URL_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(Object.assign({ accion: accion }, P, extra || {})) })
+    .catch(function () { throw new Error("Sin conexión. Revisá la señal y recargá la página."); })
+    .then(function (r) { return r.json(); })
+    .then(function (j) { if (j && j.error) { throw new Error(j.error); } return j; });
+}
+function est(html, c) { $("est").innerHTML = html; $("est").className = "res " + (c || ""); }
+function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+api("n_jus_ver").then(function (j) {
+  var datos = "<b>" + esc(j.alumno) + "</b><br>Legajo " + esc(j.legajo) + " · Comisión " + esc(j.com) + "<br>Falta del <b>" + esc(j.fecha) + "</b> (" + esc(j.tipo) + ")" +
+    (j.link ? '<br><a href="' + esc(j.link) + '" target="_blank" rel="noopener">Ver el certificado</a>' : "");
+  if (j.estado !== "En revisión") { est(datos + "<br><br>Esta justificación ya estaba resuelta: <b>" + esc(j.estado) + "</b>.", "warn"); return; }
+  est(datos);
+  var b = $("go"); b.style.display = "block";
+  b.style.background = P.a === "ok" ? "#16a34a" : "#b91c1c";
+  b.textContent = P.a === "ok" ? "Confirmar: autorizar la falta" : "Confirmar: no autorizar";
+  if (P.a === "no") { $("motivo").style.display = "block"; }
+  b.onclick = function () {
+    b.disabled = true; b.textContent = "Guardando...";
+    api("n_jus_resolver", { motivo: $("mot").value }).then(function (r) {
+      b.style.display = "none"; $("motivo").style.display = "none";
+      if (r.yaResuelta) { est(datos + "<br><br>Ya estaba resuelta: <b>" + esc(r.estado) + "</b>.", "warn"); return; }
+      est(datos + "<br><br>Listo: quedó <b>" + esc(r.estado) + "</b>. " + (r.estado === "Autorizada" ? "La falta ya cuenta como presente." : "El alumno lo ve en su app."), "ok");
+    }).catch(function (er) { b.disabled = false; b.textContent = "Reintentar"; est(datos + "<br><br>" + esc(er.message), "err"); });
+  };
+}).catch(function (er) { est(esc(er.message), "err"); });
+</script>
+</body>
+</html>
