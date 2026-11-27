@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>QR de prueba</title>
+<link rel="manifest" href="../docentes.webmanifest">
+<link rel="apple-touch-icon" href="../alumno/icon-192.png">
 <style>
 body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f5f6f8;color:#1b1b1b}
 .w{max-width:900px;margin:0 auto;padding:16px}
@@ -63,5 +65,6 @@ $("entrar").onclick = function () { COD = $("cod").value.trim().toUpperCase(); i
 try { COD = localStorage.getItem("pb_token") || ""; try { COD = String(JSON.parse(COD) || ""); } catch (e) {} } catch (e) {}
 if (COD) { cargar(); } else { est("Escribí tu código personal de docente."); $("login").style.display = "block"; }
 </script>
+<script src="../instalar.js" data-nombre="la app de docentes" data-sw="sw-docentes.js"></script>
 </body>
 </html>
