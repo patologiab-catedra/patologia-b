@@ -210,8 +210,15 @@ function arrancar() {
 }
 function mostrarEstado(e) {
   HOY = e.hoy;
-  var ops = e.mias.length ? e.mias : e.todas;
-  $("est").textContent = e.mias.length ? ("Hoy (" + e.hoy + ") tenés turno en: " + e.mias.join(", ")) : "Hoy no tenés turno asignado. Modo prueba: elegí cualquier comisión.";
+  /* Solo las comisiones del docente (turnos de hoy o las de la hoja Docentes). Nunca todas. */
+  var ops = e.mias || [];
+  if (!ops.length) {
+    $("est").textContent = "Todavía no tenés comisiones asignadas. Avisale a la secretaría.";
+    $("com").innerHTML = ""; $("tipoBox").style.display = "none"; $("ini").style.display = "none";
+    ver("sel"); return;
+  }
+  $("ini").style.display = "block";
+  $("est").textContent = "Tus comisiones: " + ops.join(", ");
   $("com").innerHTML = "";
   ops.forEach(function (c) { var o = document.createElement("option"); o.value = c; o.textContent = "Comisión " + c; $("com").appendChild(o); });
   /* Tipos de clase (hoja "Tipos de clase"): solo se pregunta si hay más de uno */
