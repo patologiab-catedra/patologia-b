@@ -157,7 +157,10 @@ function pintar(r) {
   }
   mostrar("paraTodas", false); mostrar("com", true);
   var sel = $("com"), prev = sel.value; sel.innerHTML = "";
-  if (ROL === "secretaria") { var t = document.createElement("option"); t.value = "todas"; t.textContent = "Todas las comisiones"; sel.appendChild(t); }
+  if (ROL === "secretaria") {
+    var t = document.createElement("option"); t.value = "todas"; t.textContent = "Todas las comisiones"; sel.appendChild(t);
+    var d = document.createElement("option"); d.value = "docentes"; d.textContent = "Docentes (los alumnos no lo ven)"; sel.appendChild(d);
+  }
   r.comisiones.forEach(function (n) { var o = document.createElement("option"); o.value = n; o.textContent = "Comisión " + n; sel.appendChild(o); });
   if (prev && [].some.call(sel.options, function (o) { return o.value === prev; })) { sel.value = prev; }
   if (ROL !== "secretaria") {
@@ -170,13 +173,14 @@ function pintar(r) {
     }
   }
   lista(r.avisos);
+  if (ROL !== "secretaria" && window.avisosSecretaria) { avisosSecretaria(COD); }
 }
 function lista(av) {
   var l = $("lista");
   if (!av.length) { l.innerHTML = '<div class="card muted">Todavía no hay avisos.</div>'; return; }
   l.innerHTML = av.map(function (x) {
     return '<div class="card' + (x.retirado ? " ret" : "") + '">' +
-      '<div style="margin-bottom:6px"><span class="chip">' + (x.general ? "Todas las comisiones" : "Comisión " + esc(x.com)) + "</span>" +
+      '<div style="margin-bottom:6px"><span class="chip">' + (x.general ? "Todas las comisiones" : x.docentes ? "Docentes" : "Comisión " + esc(x.com)) + "</span>" +
       '<span class="muted">' + esc(x.fecha) + (x.retirado ? " · retirado" : "") + "</span></div>" +
       (x.titulo ? '<div style="font-weight:600;margin-bottom:4px">' + esc(x.titulo) + "</div>" : "") +
       '<div style="white-space:pre-wrap">' + esc(x.texto) + "</div>" +
@@ -191,7 +195,7 @@ $("texto").oninput = function () { $("cont").textContent = $("texto").value.leng
 function txtPub() { return "Publicar aviso"; }
 $("pub").onclick = function () {
   if (!$("texto").value.trim()) { aviso("Escribí el texto del aviso.", "err"); return; }
-  var para = $("com").value === "todas" ? "todas las comisiones" : "la comisión " + $("com").value;
+  var para = $("com").value === "todas" ? "todas las comisiones" : $("com").value === "docentes" ? "los docentes" : "la comisión " + $("com").value;
   if (!PEND) {
     PEND = true; $("pub").textContent = "Tocá otra vez para publicarlo a " + para;
     setTimeout(function () { PEND = false; $("pub").textContent = txtPub(); }, 5000); return;
@@ -200,7 +204,7 @@ $("pub").onclick = function () {
   api("n_av_publicar", { alcance: $("com").value, titulo: $("titulo").value, texto: $("texto").value }).then(function (r) {
     b.disabled = false; b.textContent = txtPub();
     $("titulo").value = ""; $("texto").value = ""; $("cont").textContent = "0 / 2000";
-    pintar(r); aviso("Listo, el aviso ya aparece en Novedades de la app de los alumnos de " + para + ".", "ok");
+    pintar(r); aviso(para === "los docentes" ? "Listo, el aviso ya aparece en la app de los docentes." : "Listo, el aviso ya aparece en Novedades de la app de los alumnos de " + para + ".", "ok");
   }).catch(function (er) { b.disabled = false; b.textContent = txtPub(); aviso(er.message, "err"); });
 };
 
