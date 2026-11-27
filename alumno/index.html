@@ -140,7 +140,7 @@ a{color:var(--azul2)}
         <button class="btn" id="justif-mail"><span data-ico="mail"></span>Abrir mi mail</button>
         <button class="btn sec" id="justif-cancelar">Cancelar</button>
       </div>
-      <button class="btn" id="justif-abrir">Mandar certificado</button>
+      <button class="btn" id="justif-abrir" disabled>Buscando tus faltas…</button>
       <div id="justif-msg"></div>
       <div id="justif-pedidos"></div>
     </div>
@@ -451,7 +451,8 @@ function tablaNotas(n) {
 /* ---------- Justificaciones: mandar certificado por mail ---------- */
 var JU = null;
 function cargarJustif() {
-  api("alu_justif").then(function (r) { JU = r; pintarJustif(); }).catch(function () { $("justif-msg").innerHTML = '<div class="msg warn">Necesitás señal para mandar un certificado.</div>'; });
+  $("justif-abrir").disabled = true; $("justif-abrir").textContent = "Buscando tus faltas…";
+  api("alu_justif").then(function (r) { JU = r; pintarJustif(); }).catch(function () { $("justif-abrir").textContent = "Mandar certificado"; $("justif-msg").innerHTML = '<div class="msg warn">Necesitás señal para mandar un certificado.</div>'; });
 }
 function diaLindo(iso) { var p = String(iso || "").split("-"); return p.length === 3 ? p[2] + "/" + p[1] + "/" + p[0] : iso; }
 function pintarJustif() {
