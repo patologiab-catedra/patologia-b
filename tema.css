@@ -27,7 +27,7 @@
   --fuente-texto:"Loos Normal","Archivo",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
 }
 html,body{background:var(--fondo);color:var(--texto);font-family:var(--fuente-texto)}
-h1,h2,.tit{font-family:var(--fuente-titulo);font-stretch:125%;font-weight:300;letter-spacing:.01em}
+h1,h2,.tit{font-family:var(--fuente-titulo);font-stretch:125%;font-weight:500;letter-spacing:.01em}
 
 /* Barra superior con el logo (más aire arriba y abajo) */
 .barra-cat{background:var(--primario);color:var(--sobre-primario);
