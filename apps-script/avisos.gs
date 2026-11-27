@@ -9,7 +9,8 @@
 // Los avisos se guardan en la hoja "Avisos", que es la que lee la app del alumno (aluAvisos_ en alumno.gs).
 
 var AV_MAX_TEXTO = 2000, AV_MAX_TITULO = 120;
-var AV_COLS = ['Fecha', 'Alcance', 'Título', 'Texto', 'Autor', 'Estado', 'ID'];
+// 'Fecha y hora' es el nombre que ya usaba la hoja Avisos creada por setup.gs (y la que lee la app del alumno).
+var AV_COLS = ['Fecha y hora', 'Alcance', 'Título', 'Texto', 'Autor', 'Estado', 'ID'];
 
 // ---------- Ejecutar UNA vez a mano ----------
 // Crea la hoja Avisos (si no está) y genera la clave de la secretaría. La clave aparece en el registro de ejecución.
@@ -73,7 +74,7 @@ function avEstado_(u) {
     if (u.rol === 'docente' && (general || u.comisiones.indexOf(com) < 0)) { continue; }
     var est = aluTxt_(r[m['Estado']]);
     out.push({
-      id: r[m['ID']], fecha: r[m['Fecha']], general: general, com: com,
+      id: r[m['ID']], fecha: r[m['Fecha y hora']], general: general, com: com,
       titulo: r[m['Título']], texto: r[m['Texto']], autor: r[m['Autor']],
       retirado: est.indexOf('retirad') >= 0
     });
@@ -102,7 +103,7 @@ function avPublicar_(u, alcance, titulo, texto) {
     var sh = avHoja_(), m = avColumnas_(sh), fila = [];
     for (var c = 0; c < sh.getLastColumn(); c++) { fila.push(''); }
     var tz = Session.getScriptTimeZone();
-    fila[m['Fecha']] = Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy HH:mm');
+    fila[m['Fecha y hora']] = Utilities.formatDate(new Date(), tz, 'dd/MM/yyyy HH:mm');
     fila[m['Alcance']] = alc;
     fila[m['Título']] = seguro(titulo);
     fila[m['Texto']] = seguro(texto);
