@@ -223,6 +223,7 @@ function mostrarEstado(e) {
   }
   $("ini").style.display = "block";
   $("est").textContent = "Tus comisiones: " + ops.join(", ");
+  if (window.avisosSecretaria) { avisosSecretaria(TOKEN); }
   $("com").innerHTML = "";
   ops.forEach(function (c) { var o = document.createElement("option"); o.value = c; o.textContent = "Comisión " + c; $("com").appendChild(o); });
   /* Tipos de clase (hoja "Tipos de clase"): solo se pregunta si hay más de uno */

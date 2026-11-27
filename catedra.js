@@ -53,3 +53,72 @@ document.addEventListener("DOMContentLoaded", function () {
     var s = a.querySelector("svg"); s.setAttribute("width", "18"); s.setAttribute("height", "18");
   });
 });
+
+/* ===== Notificaciones de la cátedra (avisos de la secretaría para los docentes) =====
+   Campanita en la barra violeta de las páginas de docentes, con el número de avisos nuevos.
+   Al tocarla se despliega la lista; lo leído deja de contar como nuevo. Si el docente lo permite,
+   también aparece una notificación del celular cuando abre la app y hay avisos nuevos. */
+function avisosSecretaria(cod) {
+  cod = String(cod || "").trim();
+  var barra = document.querySelector(".barra-cat");
+  if (!cod || !barra || !document.querySelector(".dnav") || typeof URL_API === "undefined") { return; }
+  fetch(URL_API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ accion: "n_av_docentes", cod: cod }) })
+    .then(function (r) { return r.json(); })
+    .then(function (r) { if (r && !r.error) { campana(barra, r.avisos || []); } })
+    .catch(function () {});
+}
+function campana(barra, avisos) {
+  var esc = function (s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); };
+  var vistos = {}; try { vistos = JSON.parse(localStorage.getItem("pb_av_vistos") || "{}"); } catch (e) {}
+  var nuevos = avisos.filter(function (a) { return !vistos[a.id]; });
+  var b = document.getElementById("campana");
+  if (!b) {
+    b = document.createElement("button"); b.id = "campana"; b.type = "button";
+    b.style.cssText = "position:relative;flex:none;background:rgba(255,255,255,.14);border:0;color:#fff;width:44px;height:44px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:4px";
+    barra.appendChild(b);
+    var info = barra.querySelector(".info"); if (info) { info.style.marginLeft = "auto"; }
+  }
+  b.setAttribute("aria-label", "Notificaciones de la cátedra" + (nuevos.length ? ": " + nuevos.length + " nuevas" : ""));
+  b.innerHTML = icono("campana").replace('class="ico"', 'class="ico" style="width:24px;height:24px"') +
+    (nuevos.length ? '<span style="position:absolute;top:2px;right:2px;min-width:19px;height:19px;padding:0 5px;border-radius:99px;background:#e5484d;color:#fff;font:700 11px/19px sans-serif;text-align:center;box-shadow:0 0 0 2px var(--primario,#8528dd)">' + (nuevos.length > 9 ? "9+" : nuevos.length) + "</span>" : "");
+  var p = document.getElementById("campana-panel");
+  if (!p) {
+    p = document.createElement("section"); p.id = "campana-panel"; p.setAttribute("aria-label", "Notificaciones de la cátedra");
+    p.style.cssText = "display:none;background:var(--carta,#fff);border-bottom:1px solid var(--borde,#e6e1da);box-shadow:0 8px 20px rgba(40,20,60,.12);padding:6px 18px 12px;font-size:15px;line-height:1.45";
+    barra.parentNode.insertBefore(p, barra.nextSibling);
+  }
+  var tarjeta = function (a) {
+    return '<div style="padding:10px 0;border-top:1px solid var(--borde,#e6e1da)"><div style="font-size:12.5px;color:var(--texto-2,#6a6470)">' + esc(a.fecha) + (vistos[a.id] ? "" : ' · <b style="color:var(--primario,#8528dd)">Nuevo</b>') + "</div>" +
+      (a.titulo ? '<div style="font-weight:700">' + esc(a.titulo) + "</div>" : "") + '<div style="white-space:pre-wrap">' + esc(a.texto) + "</div></div>";
+  };
+  var permiso = ("Notification" in window) && Notification.permission === "default"
+    ? '<button id="campana-permiso" type="button" style="background:none;border:0;color:var(--primario,#8528dd);font:inherit;font-weight:600;padding:8px 0 0;cursor:pointer">Avisarme también con una notificación del celular</button>' : "";
+  p.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0"><b style="color:var(--primario,#8528dd)">Notificaciones de la cátedra</b><button id="campana-cerrar" type="button" aria-label="Cerrar" style="background:none;border:0;font-size:22px;line-height:1;color:var(--texto-2,#6a6470);cursor:pointer">×</button></div>' +
+    (avisos.length ? avisos.map(tarjeta).join("") : '<div style="padding:10px 0;border-top:1px solid var(--borde,#e6e1da);color:var(--texto-2,#6a6470)">No hay avisos de la secretaría.</div>') + permiso;
+  var marcarLeidos = function () {
+    avisos.forEach(function (a) { vistos[a.id] = 1; });
+    try { localStorage.setItem("pb_av_vistos", JSON.stringify(vistos)); } catch (e) {}
+    var badge = b.querySelector("span"); if (badge) { badge.remove(); }
+    b.setAttribute("aria-label", "Notificaciones de la cátedra");
+  };
+  b.onclick = function () { var abrir = p.style.display === "none"; p.style.display = abrir ? "block" : "none"; if (abrir) { marcarLeidos(); } };
+  document.getElementById("campana-cerrar").onclick = function () { p.style.display = "none"; };
+  var bp = document.getElementById("campana-permiso");
+  if (bp) { bp.onclick = function () { Notification.requestPermission().then(function () { bp.remove(); }); }; }
+  /* Notificación del celular (solo si el docente la permitió) para los avisos que todavía no vio */
+  if (nuevos.length && ("Notification" in window) && Notification.permission === "granted") {
+    var yaAvisados = {}; try { yaAvisados = JSON.parse(localStorage.getItem("pb_av_notif") || "{}"); } catch (e) {}
+    var pend = nuevos.filter(function (a) { return !yaAvisados[a.id]; });
+    if (pend.length) {
+      var t = pend.length === 1 ? (pend[0].titulo || "Aviso de la secretaría") : pend.length + " avisos nuevos de la secretaría";
+      var cuerpo = pend.length === 1 ? pend[0].texto : pend.map(function (a) { return a.titulo || a.texto; }).join(" · ");
+      try {
+        var logo = new URL("alumno/icon-192.png", document.querySelector('link[rel="manifest"]').href).href;
+        if (navigator.serviceWorker && navigator.serviceWorker.ready) { navigator.serviceWorker.ready.then(function (reg) { reg.showNotification(t, { body: cuerpo, icon: logo, tag: "avisos-catedra" }); }); }
+        else { new Notification(t, { body: cuerpo, icon: logo }); }
+      } catch (e) {}
+      pend.forEach(function (a) { yaAvisados[a.id] = 1; });
+      try { localStorage.setItem("pb_av_notif", JSON.stringify(yaAvisados)); } catch (e) {}
+    }
+  }
+}
