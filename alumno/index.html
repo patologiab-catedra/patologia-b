@@ -38,7 +38,7 @@ input.cod{letter-spacing:8px;text-align:center;font-size:26px}
 table{width:100%;border-collapse:collapse;font-size:15px}
 th,td{padding:8px 6px;text-align:center;border-bottom:1px solid var(--borde)}
 th:first-child,td:first-child{text-align:left}
-.fila{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--borde)}
+.fila{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--borde)}
 .fila:last-child{border-bottom:0}
 #qrbox{background:#fff;border:1px solid var(--borde);border-radius:16px;padding:18px;display:flex;justify-content:center}
 #qrbox img,#qrbox canvas{width:100%;max-width:320px;height:auto;image-rendering:pixelated}
@@ -51,6 +51,15 @@ nav button .i{position:relative}
 .badge{position:absolute;top:-3px;right:2px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:#e5484d;color:#fff;font:700 11px/18px system-ui,sans-serif;text-align:center;box-shadow:0 0 0 2px var(--carta)}
 nav button.on .ico{stroke-width:2.3}
 .oculto{display:none!important}
+/* Íconos dentro de títulos, botones y filas */
+.tit-ico{display:flex;align-items:center;gap:8px}
+.tit-ico .ico{width:20px;height:20px;color:var(--primario);flex:none}
+.btn .ico{width:20px;height:20px;vertical-align:-4px;margin-right:8px}
+.fila a{text-align:right;font-size:14px}
+.fila .et{flex:none;display:flex;align-items:center;gap:8px}
+.fila .et .ico{width:20px;height:20px;color:var(--primario)}
+.hu{display:inline-flex;align-items:center;gap:5px}
+.hu .ico{width:15px;height:15px;flex:none}
 a{color:var(--azul2)}
 </style>
 </head>
@@ -83,9 +92,9 @@ a{color:var(--azul2)}
   <section id="v-inicio" class="oculto">
     <h2 id="saludo"></h2>
     <div class="card" id="c-faltas"></div>
-    <button class="btn" data-ir="qr">Mostrar mi QR</button>
+    <button class="btn" data-ir="qr"><span data-ico="qr"></span>Mostrar mi QR</button>
     <div id="c-ultimo"></div>
-    <button class="btn sec" data-ir="catedra">Información de la cátedra</button>
+    <button class="btn sec" data-ir="catedra"><span data-ico="info"></span>Información de la cátedra</button>
     <p class="muted" id="t-act"></p>
   </section>
 
@@ -105,13 +114,13 @@ a{color:var(--azul2)}
     <h2>Asistencia</h2>
     <div id="asis-cont"></div>
     <div class="card" id="justif">
-      <h3 style="margin-top:0">¿Faltaste con certificado?</h3>
+      <h3 class="tit-ico" style="margin-top:0"><span data-ico="clip"></span>¿Faltaste con certificado?</h3>
       <p class="muted" style="margin-top:0">Mandalo y la secretaría lo revisa. La falta cuenta como presente cuando lo autoriza.</p>
       <div id="justif-form" class="oculto">
         <label class="muted" for="justif-dia">¿Qué día faltaste?</label>
         <select id="justif-dia" style="width:100%;font-size:17px;padding:12px;border:1.5px solid var(--borde);border-radius:12px;background:var(--carta);color:var(--texto);margin:6px 0;font-family:inherit"></select>
         <p class="muted" style="margin:4px 0 0">Se abre tu mail con todo escrito: solo adjuntá la foto del certificado y enviá.</p>
-        <button class="btn" id="justif-mail">Abrir mi mail</button>
+        <button class="btn" id="justif-mail"><span data-ico="mail"></span>Abrir mi mail</button>
         <button class="btn sec" id="justif-cancelar">Cancelar</button>
       </div>
       <button class="btn" id="justif-abrir">Mandar certificado</button>
@@ -129,7 +138,7 @@ a{color:var(--azul2)}
   <!-- ===== Novedades ===== -->
   <section id="v-nov" class="oculto">
     <h2>Novedades</h2>
-    <a class="btn sec" id="b-ig" target="_blank" rel="noopener">Seguí a la cátedra en Instagram</a>
+    <a class="btn sec" id="b-ig" target="_blank" rel="noopener"><span data-ico="instagram"></span>Seguí a la cátedra en Instagram</a>
     <div id="nov-cont"></div>
   </section>
 
@@ -137,8 +146,8 @@ a{color:var(--azul2)}
   <section id="v-catedra" class="oculto">
     <h2>La cátedra</h2>
     <div class="card" id="cat-cont"></div>
-    <button class="btn sec" data-ir="inicio">Volver al inicio</button>
-    <button class="btn sec" id="b-salir">Cerrar sesión en este celular</button>
+    <button class="btn sec" data-ir="inicio"><span data-ico="inicio"></span>Volver al inicio</button>
+    <button class="btn sec" id="b-salir"><span data-ico="salir"></span>Cerrar sesión en este celular</button>
   </section>
 
 </main>
@@ -266,7 +275,7 @@ function marcarAvisosLeidos() {
 function pintar() {
   if (!D) { return; }
   var a = D.alumno, r = D.resumen;
-  $("hsub").textContent = a.apellido + ", " + a.nombre + " · Comisión " + a.com;
+  $("hsub").innerHTML = '<span class="hu">' + icono("usuario") + esc(a.apellido + ", " + a.nombre + " · Comisión " + a.com) + "</span>";
   $("saludo").textContent = "Hola, " + a.nombre.split(" ")[0];
   $("t-act").textContent = "Datos actualizados el " + D.actualizado + (navigator.onLine ? "" : " (sin conexión ahora)");
 
@@ -288,7 +297,7 @@ function pintar() {
     var base = AS.regla === "TODAS JUNTAS" ? AS.total : ob[0];
     if (base) {
       var qq = base.quedan, cl = qq < 0 ? "est-err" : (qq <= 2 ? "est-warn" : "est-ok");
-      htmlF = '<div class="muted">Faltas que te quedan' + (ob.length > 1 && AS.regla !== "TODAS JUNTAS" ? " en " + esc(base.tipo) : "") + '</div>' +
+      htmlF = '<div class="muted tit-ico">' + icono("calendario") + 'Faltas que te quedan' + (ob.length > 1 && AS.regla !== "TODAS JUNTAS" ? " en " + esc(base.tipo) : "") + '</div>' +
         '<div class="big">' + esc(Math.max(qq, 0)) + '</div>' +
         '<div class="muted" style="margin-top:6px">Llevás ' + esc(base.faltas) + " de " + esc(base.permitidas) + " faltas permitidas en el año</div>";
       if (!juntas) {
@@ -298,7 +307,7 @@ function pintar() {
     }
     /* Detalle por tipo */
     htmlTipos = AS.tipos.map(function (t) {
-      return '<div class="card"><h3 style="margin-top:0">' + esc(t.tipo) + (t.obligatoria ? "" : ' <span class="chip">no obligatoria</span>') + "</h3>" +
+      return '<div class="card"><h3 class="tit-ico" style="margin-top:0">' + icono("calendario") + esc(t.tipo) + (t.obligatoria ? "" : ' <span class="chip">no obligatoria</span>') + "</h3>" +
         '<div class="fila"><span>Clases dadas</span><strong>' + esc(t.clasesDadas) + " de " + esc(t.clasesAnio) + "</strong></div>" +
         '<div class="fila"><span>Presentes</span><strong>' + esc(t.presentes) + "</strong></div>" +
         (t.justificadas ? '<div class="fila"><span>Faltas justificadas</span><strong>' + esc(t.justificadas) + "</strong></div>" : "") +
@@ -321,7 +330,7 @@ function pintar() {
       filasC += "<li>Cada tipo de clase se cuenta por separado: pasarte en uno solo ya alcanza para perder la regularidad.</li>";
     }
     var auto = ob.filter(function (t) { return t.modo !== "A mano"; });
-    htmlCalc = '<div class="card"><h3 style="margin-top:0">¿Cómo se calculan tus faltas?</h3>' +
+    htmlCalc = '<div class="card"><h3 class="tit-ico" style="margin-top:0">' + icono("info") + '¿Cómo se calculan tus faltas?</h3>' +
       (auto.length ? '<p class="muted" style="margin-top:0">Para ser regular tenés que cumplir el ' + esc(auto[0].pct) + '% de las actividades obligatorias. Si la cuenta da con coma, se redondea para arriba la cantidad de clases a las que tenés que ir.</p>' : "") +
       '<ul style="padding-left:18px;margin:0">' + filasC + "</ul></div>";
   }
@@ -329,7 +338,7 @@ function pintar() {
 
   /* último aviso */
   var av = D.avisos || [];
-  $("c-ultimo").innerHTML = av.length ? '<h3>Último aviso</h3>' + tarjetaAviso(av[0]) : "";
+  $("c-ultimo").innerHTML = av.length ? '<h3 class="tit-ico">' + icono("novedades") + 'Último aviso</h3>' + tarjetaAviso(av[0]) : "";
 
   /* QR */
   $("qr-nom").textContent = a.apellido + ", " + a.nombre;
@@ -368,12 +377,12 @@ function pintar() {
 
   /* cátedra */
   var cfg = D.config || {}, links = "";
-  if (cfg.AULASWEB) { links += '<div class="fila"><span>AulasWeb</span><a href="' + esc(cfg.AULASWEB) + '" target="_blank" rel="noopener">Abrir</a></div>'; }
+  if (cfg.AULASWEB) { links += '<div class="fila"><span class="et">' + icono("web") + 'AulasWeb</span><a href="' + esc(cfg.AULASWEB) + '" target="_blank" rel="noopener">Abrir</a></div>'; }
   var igUsr = cfg.INSTAGRAM_USUARIO || CATEDRA.INSTAGRAM_USUARIO || "Abrir", mail = cfg.CONTACTO || CATEDRA.CONTACTO;
-  if (ig) { links += '<div class="fila"><span>Instagram</span><a href="' + esc(ig) + '" target="_blank" rel="noopener">' + esc(igUsr) + '</a></div>'; }
-  if (mail) { links += '<div class="fila"><span>Secretaría</span><a href="mailto:' + esc(mail) + '">' + esc(mail) + "</a></div>"; }
-  if (cfg.CRONOGRAMA) { links += '<div class="fila"><span>Cronograma</span><a href="' + esc(cfg.CRONOGRAMA) + '" target="_blank" rel="noopener">Ver</a></div>'; }
-  if (cfg.CARTELERA) { links += '<div class="fila"><span>Cartelera</span><span>' + esc(cfg.CARTELERA) + "</span></div>"; }
+  if (ig) { links += '<div class="fila"><span class="et">' + icono("instagram") + 'Instagram</span><a href="' + esc(ig) + '" target="_blank" rel="noopener">' + esc(igUsr) + '</a></div>'; }
+  if (mail) { links += '<div class="fila"><span class="et">' + icono("mail") + 'Secretaría</span><a href="mailto:' + esc(mail) + '">' + esc(mail).replace("@", "@<wbr>") + "</a></div>"; }
+  if (cfg.CRONOGRAMA) { links += '<div class="fila"><span class="et">' + icono("calendario") + 'Cronograma</span><a href="' + esc(cfg.CRONOGRAMA) + '" target="_blank" rel="noopener">Ver</a></div>'; }
+  if (cfg.CARTELERA) { links += '<div class="fila"><span class="et">' + icono("lugar") + 'Cartelera</span><span>' + esc(cfg.CARTELERA) + "</span></div>"; }
   $("cat-cont").innerHTML = links;
 }
 
@@ -395,9 +404,9 @@ function promocion(g) {
     if (f1 !== null || otras) { rendidos++; if (f1 !== null && f1 >= 7) { ok++; } else { corta = true; } }
   });
   if (!rendidos) { return ""; }
-  if (corta) { return '<div class="card"><div class="muted">Promoción</div><div style="font-weight:700;margin-top:2px">No promocionás este año</div><div class="muted" style="margin-top:4px">Para promocionar hace falta 7 o más en la 1.ª fecha de los 3 parciales. Igual podés aprobar la cursada con 4 o más.</div></div>'; }
-  if (ok === 3) { return '<div class="card" style="border-color:var(--primario)"><div class="muted">Promoción</div><div style="font-weight:700;font-size:20px;color:var(--primario);margin-top:2px">¡Promocionás!</div><div class="muted" style="margin-top:4px">Sacaste 7 o más en la 1.ª fecha de los 3 parciales.</div></div>'; }
-  return '<div class="card" style="border-color:var(--primario);background:var(--v-50)"><div class="muted">Promoción</div><div style="font-weight:700;font-size:18px;color:var(--primario);margin-top:2px">En vías de promoción</div><div class="muted" style="margin-top:4px">Vas ' + ok + ' de 3: seguí con 7 o más en la 1.ª fecha ' + (3 - ok === 1 ? "del parcial que falta" : "de los parciales que faltan") + '.</div></div>';
+  if (corta) { return '<div class="card"><div class="muted tit-ico">' + icono("estrella") + 'Promoción</div><div style="font-weight:700;margin-top:2px">No promocionás este año</div><div class="muted" style="margin-top:4px">Para promocionar hace falta 7 o más en la 1.ª fecha de los 3 parciales. Igual podés aprobar la cursada con 4 o más.</div></div>'; }
+  if (ok === 3) { return '<div class="card" style="border-color:var(--primario)"><div class="muted tit-ico">' + icono("estrella") + 'Promoción</div><div style="font-weight:700;font-size:20px;color:var(--primario);margin-top:2px">¡Promocionás!</div><div class="muted" style="margin-top:4px">Sacaste 7 o más en la 1.ª fecha de los 3 parciales.</div></div>'; }
+  return '<div class="card" style="border-color:var(--primario);background:var(--v-50)"><div class="muted tit-ico">' + icono("estrella") + 'Promoción</div><div style="font-weight:700;font-size:18px;color:var(--primario);margin-top:2px">En vías de promoción</div><div class="muted" style="margin-top:4px">Vas ' + ok + ' de 3: seguí con 7 o más en la 1.ª fecha ' + (3 - ok === 1 ? "del parcial que falta" : "de los parciales que faltan") + '.</div></div>';
 }
 function tablaNotas(n) {
   if (!n) { return '<div class="card muted">Todavía no hay notas cargadas.</div>'; }
