@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Asistencia</title>
+<link rel="manifest" href="docentes.webmanifest">
+<link rel="apple-touch-icon" href="alumno/icon-192.png">
 <style>
 body{font-family:system-ui,Arial,sans-serif;margin:0;background:#f5f6f8;color:#1b1b1b}
 .w{max-width:520px;margin:0 auto;padding:16px}
@@ -13,6 +15,13 @@ h1{font-size:22px}
 .ok{background:#c9f2d3}.err{background:#fbd0d0}.warn{background:#fdeeba}
 select,input[type=password]{font-size:16px;padding:10px;margin:8px 0;width:100%;box-sizing:border-box}
 li{padding:4px 0}
+#lst li,#manlst li{display:flex;justify-content:space-between;align-items:center;gap:8px;list-style:none;background:#fff;border-radius:8px;padding:8px 10px;margin:6px 0}
+#lst,#manlst{padding:0}
+.mini{background:none;border:1px solid #b91c1c;color:#b91c1c;border-radius:8px;padding:6px 10px;font-size:14px;cursor:pointer;white-space:nowrap}
+.mini.add{border-color:#16a34a;color:#16a34a}
+.b.sec{background:#fff;color:#1a56db;border:2px solid #1a56db}
+input[type=text]{font-size:16px;padding:10px;margin:8px 0;width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px}
+.muted{color:#64748b;font-size:14px}
 .dnav{display:flex;gap:8px;margin:0 0 8px}
 .dnav a{flex:1;text-align:center;padding:10px 4px;border-radius:10px;border:2px solid #1a56db;color:#1a56db;background:#fff;text-decoration:none;font-size:15px}
 .dnav a.on{background:#1a56db;color:#fff}
@@ -26,8 +35,15 @@ li{padding:4px 0}
   <div id="est" class="res">Cargando...</div>
 
   <div id="login" style="display:none">
-    <label>Tu código de ayudante<input id="tok" type="password" autocomplete="off" placeholder="Código que te dio la secretaría"></label>
+    <label>Código personal<input id="tok" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase" placeholder="El mismo de Notas y Avisos"></label>
     <button class="b" id="entrar">Entrar</button>
+    <p style="margin:10px 0 0"><a href="#" id="nocod" style="color:#1a56db">¿No tenés código o lo perdiste?</a></p>
+    <div id="pform" style="display:none;border-top:1px solid #e2e8f0;padding-top:14px;margin-top:10px">
+      <label>Nombre y apellido<input id="pnom" type="text" maxlength="80"></label>
+      <label>Comisión <select id="pcom"><option value="">Elegí tu comisión</option></select></label>
+      <label>Mail o celular para pasarte el código<input id="pcon" type="text" maxlength="80"></label>
+      <button class="b" id="penv">Pedir código</button>
+    </div>
   </div>
 
   <div id="sel" style="display:none">
@@ -42,9 +58,17 @@ li{padding:4px 0}
     <canvas id="cv" style="display:none"></canvas>
     <div id="res" class="res">Apuntá la cámara al QR del alumno</div>
     <label class="b">Sacar foto del QR<input id="foto" type="file" accept="image/*" capture="environment" style="display:none"></label>
+    <button class="b sec" id="manual">Dar presente sin QR</button>
+    <div id="manbox" style="display:none">
+      <p class="muted" style="margin:6px 0 0">Para alumnos que vinieron sin celular o sin batería. Buscalo por apellido.</p>
+      <input type="text" id="manbus" placeholder="Apellido o legajo" autocomplete="off">
+      <ul id="manlst"></ul>
+    </div>
     <p id="cnt" style="font-size:20px;text-align:center;font-weight:bold"></p>
     <p id="sync" style="text-align:center"></p>
-    <button class="b" id="fin" style="background:#16a34a">Terminar la clase</button>
+    <button class="b" id="fin" style="background:#16a34a">Terminar y ver resumen</button>
+    <h3 style="margin:16px 0 0">Presentes de esta clase</h3>
+    <p class="muted" style="margin:2px 0 0">Si alguien quedó presente por error, tocá Quitar.</p>
     <ul id="lst"></ul>
   </div>
 
@@ -64,7 +88,7 @@ li{padding:4px 0}
 <script>
 /* La dirección del Apps Script está en config.js; el nombre de la cátedra sale de la hoja Config. */
 
-window.onerror = function (m) { try { msg("Error: " + m, "err"); } catch (e) {} };
+window.onerror = function () { try { msg("Algo falló en la página. Recargala: los presentes que ya marcaste quedan guardados en el celular.", "err"); } catch (e) {} };
 var TOKEN = "", ROS = {}, COM = null, TIPO = "", HOY = "", visto = {}, cola = [], CK = "", VK = "", RK = "";
 var total = 0, lastTxt = "", lastT = 0, syncing = false, timer = null, camTried = false;
 
@@ -87,7 +111,74 @@ function estado() {
   var t = cola.length ? ("Pendientes de enviar: " + cola.length + " (se envían solos cuando haya señal)") : "Todo enviado a la planilla";
   $("sync").textContent = t; $("rsync").textContent = t;
 }
-function lista(n) { var li = document.createElement("li"); li.textContent = n; $("lst").insertBefore(li, $("lst").firstChild); }
+/* Lista de presentes de la clase, cada uno con su botón Quitar (pide tocar dos veces) */
+function lista() {
+  var u = $("lst"); u.innerHTML = "";
+  var ls = Object.keys(visto).filter(function (l) { return ROS[l]; });
+  ls.sort(function (a, b) { return String(visto[b]).localeCompare(String(visto[a])); });
+  if (!ls.length) { u.innerHTML = '<li class="muted">Todavía no hay presentes.</li>'; return; }
+  ls.forEach(function (l) {
+    var li = document.createElement("li"), sp = document.createElement("span"), b = document.createElement("button");
+    sp.textContent = ROS[l].n + (MAN[l] ? " (sin QR)" : "");
+    b.className = "mini"; b.textContent = "Quitar"; b.setAttribute("data-l", l);
+    li.appendChild(sp); li.appendChild(b); u.appendChild(li);
+  });
+}
+var MAN = {}, PENDQ = "";
+/* Marca a un alumno presente: lo usan el QR y el botón "Dar presente sin QR" */
+function marcar(l, manual) {
+  var a = ROS[l];
+  visto[l] = ahora(); if (manual) { MAN[l] = 1; save(VK + "_man", MAN); }
+  cola.push({ l: l, ts: ahora() }); save(CK, cola); save(VK, visto);
+  var todos = Object.keys(visto).length >= total;
+  msg(a.n + " - PRESENTE" + (manual ? " (sin QR)" : "") + (todos ? ". Ya están todos, podés terminar la clase." : ""), "ok");
+  if (navigator.vibrate) { navigator.vibrate(120); }
+  lista(); cnt(); estado(); sync(); if (manual) { listaManual(); }
+}
+$("lst").onclick = function (ev) {
+  var b = ev.target.closest(".mini"); if (!b) { return; }
+  var l = b.getAttribute("data-l");
+  if (PENDQ !== l) { PENDQ = l; b.textContent = "Tocá otra vez para quitar"; setTimeout(function () { if (PENDQ === l) { PENDQ = ""; b.textContent = "Quitar"; } }, 5000); return; }
+  PENDQ = ""; quitar(l, b);
+};
+function quitar(l, b) {
+  var n = ROS[l].n;
+  function local() {
+    delete visto[l]; delete MAN[l]; save(VK, visto); save(VK + "_man", MAN);
+    lista(); cnt(); estado(); listaManual(); msg(n + " ya no figura como presente.", "warn");
+  }
+  /* Si todavía no se envió, alcanza con sacarlo de la cola */
+  if (cola.some(function (x) { return x.l === l; })) {
+    cola = cola.filter(function (x) { return x.l !== l; }); save(CK, cola); local(); return;
+  }
+  b.disabled = true; b.textContent = "Quitando...";
+  api("n_quitar_presente", { cod: TOKEN, com: COM, tipo: TIPO, fecha: HOY, l: l }).then(local).catch(function (er) {
+    b.disabled = false; b.textContent = "Quitar";
+    msg(!navigator.onLine || /fetch|network/i.test(er.message) ? "Para quitar un presente que ya se envió necesitás señal." : er.message, "err");
+  });
+}
+/* Presente sin QR: lista de la comisión con buscador */
+$("manual").onclick = function () {
+  var abrir = $("manbox").style.display === "none";
+  $("manbox").style.display = abrir ? "block" : "none";
+  $("manual").textContent = abrir ? "Cerrar presente sin QR" : "Dar presente sin QR";
+  if (abrir) { $("manbus").value = ""; listaManual(); }
+};
+$("manbus").oninput = listaManual;
+function listaManual() {
+  if ($("manbox").style.display === "none") { return; }
+  var q = norm($("manbus").value), u = $("manlst"); u.innerHTML = "";
+  var ls = Object.keys(ROS).filter(function (l) { return !visto[l] && (!q || norm(ROS[l].n).indexOf(q) >= 0 || l.indexOf(q) >= 0); });
+  ls.sort(function (a, b) { return ROS[a].n.localeCompare(ROS[b].n); });
+  if (!ls.length) { u.innerHTML = '<li class="muted">' + (q ? "No hay ausentes con ese nombre." : "No quedan ausentes.") + "</li>"; return; }
+  ls.slice(0, 40).forEach(function (l) {
+    var li = document.createElement("li"), sp = document.createElement("span"), b = document.createElement("button");
+    sp.textContent = ROS[l].n + " · " + l; b.className = "mini add"; b.textContent = "Presente";
+    b.onclick = function () { marcar(l, true); };
+    li.appendChild(sp); li.appendChild(b); u.appendChild(li);
+  });
+}
+function norm(x) { return String(x || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim(); }
 function fill(id, arr) {
   var u = $(id); u.innerHTML = "";
   if (!arr.length) { var li = document.createElement("li"); li.textContent = "Ninguno"; u.appendChild(li); return; }
@@ -107,12 +198,12 @@ function arrancar() {
   TOKEN = load("pb_token", "");
   /* Si Notas lo guardó como texto suelto (versión vieja), se lee igual */
   if (!TOKEN) { try { TOKEN = localStorage.getItem("pb_token") || ""; } catch (e) {} }
-  if (!TOKEN) { $("est").textContent = "Ingresá con tu código de ayudante"; ver("login"); return; }
+  if (!TOKEN) { $("est").textContent = "Escribí tu código personal para entrar."; ver("login"); return; }
   $("est").textContent = "Cargando...";
   api("estado").then(function (e) {
     save("pb_estado", e); mostrarEstado(e);
   }).catch(function (er) {
-    if (String(er.message).indexOf("Código") >= 0) { localStorage.removeItem("pb_token"); $("est").textContent = er.message; ver("login"); return; }
+    if (/c[oó]digo/i.test(String(er.message))) { localStorage.removeItem("pb_token"); $("est").textContent = "El código no es válido. Revisalo o pedile uno nuevo a la secretaría."; ver("login"); return; }
     var e = load("pb_estado", null);
     if (e) { mostrarEstado(e); } else { $("est").textContent = "Sin conexión. Abrí la página con señal al menos una vez antes de la clase."; }
   });
@@ -131,10 +222,30 @@ function mostrarEstado(e) {
   ver("sel");
 }
 $("entrar").onclick = function () {
-  var t = $("tok").value.trim(); if (!t) { return; }
+  var t = $("tok").value.trim().toUpperCase(); if (!t) { $("est").textContent = "Escribí el código."; return; }
   save("pb_token", t); arrancar();
 };
-$("salir").onclick = function () { localStorage.removeItem("pb_token"); $("tok").value = ""; $("est").textContent = "Ingresá con tu código de ayudante"; ver("login"); };
+$("salir").onclick = function () { localStorage.removeItem("pb_token"); $("tok").value = ""; $("est").textContent = "Escribí tu código personal para entrar."; ver("login"); };
+$("tok").onkeydown = function (ev) { if (ev.key === "Enter") { $("entrar").click(); } };
+/* Pedido de código (igual que en Notas y Avisos) */
+$("nocod").onclick = function (ev) {
+  ev.preventDefault();
+  var abrir = $("pform").style.display === "none";
+  $("pform").style.display = abrir ? "block" : "none";
+  if (abrir && $("pcom").options.length < 2) {
+    api("n_comisiones").then(function (r) {
+      r.comisiones.forEach(function (n) { var o = document.createElement("option"); o.value = n; o.textContent = "Comisión " + n; $("pcom").appendChild(o); });
+    }).catch(function (er) { $("est").textContent = er.message; });
+  }
+};
+$("penv").onclick = function () {
+  $("penv").disabled = true; $("est").textContent = "Enviando el pedido...";
+  api("n_pedir", { nombre: $("pnom").value, com: $("pcom").value, contacto: $("pcon").value }).then(function () {
+    $("penv").disabled = false; $("pform").style.display = "none";
+    $("pnom").value = ""; $("pcom").value = ""; $("pcon").value = "";
+    $("est").textContent = "Listo, la secretaría recibió tu pedido y te va a pasar el código.";
+  }).catch(function (er) { $("penv").disabled = false; $("est").textContent = er.message; });
+};
 
 /* ---- clase ---- */
 $("ini").onclick = function () {
@@ -149,7 +260,7 @@ $("ini").onclick = function () {
 };
 function iniciar(r) {
   ROS = {}; r.forEach(function (a) { ROS[a.l] = a; }); total = r.length;
-  $("lst").innerHTML = ""; Object.keys(visto).forEach(function (l) { if (ROS[l]) { lista(ROS[l].n); } });
+  MAN = load(VK + "_man", {}); lista(); $("manbox").style.display = "none"; $("manual").textContent = "Dar presente sin QR";
   $("est").textContent = "Comisión " + COM + (TIPO ? " · " + TIPO : "") + " - " + HOY;
   msg("Apuntá la cámara al QR del alumno", "");
   ver("esc"); cnt(); estado();
@@ -166,11 +277,7 @@ function procesar(txt) {
   var a = ROS[p[1]];
   if (!a || a.c !== txt) { msg("Este QR no corresponde a esta comisión", "err"); return; }
   if (visto[p[1]]) { msg(a.n + " ya estaba registrado", "warn"); return; }
-  visto[p[1]] = 1; cola.push({ l: p[1], ts: ahora() }); save(CK, cola); save(VK, visto);
-  var todos = Object.keys(visto).length >= total;
-  msg(a.n + " - PRESENTE" + (todos ? ". Ya están todos, podés terminar la clase." : ""), "ok");
-  if (navigator.vibrate) { navigator.vibrate(120); }
-  lista(a.n); cnt(); estado(); sync();
+  marcar(p[1], false);
 }
 function sync() {
   if (syncing || !cola.length) { estado(); return; }
@@ -254,5 +361,6 @@ $("foto").addEventListener("change", function (ev) {
 cargarCatedra(function (c) { var t = "Asistencia · " + (c.CATEDRA_CORTO || c.CATEDRA_NOMBRE); document.title = t; $("tit").textContent = t; });
 arrancar();
 </script>
+<script src="instalar.js" data-nombre="la app de docentes" data-sw="sw-docentes.js"></script>
 </body>
 </html>
